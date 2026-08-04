@@ -48,7 +48,7 @@ function renderClientData(payload, rootSelector) {
       <section class="section-block">
         <div class="section-title">Votre interlocutrice Bluewaive</div>
         <div class="contact-card">
-          <img src="/christel%20bluewaive.png" alt="Christel" class="contact-photo">
+          <img src="/christel-bluewaive.png" alt="Christel" class="contact-photo">
           <div>
             <h3>Christel</h3>
             <p>Votre accompagnante pour l'onboarding, les documents et les premieres etapes de mise en service.</p>
