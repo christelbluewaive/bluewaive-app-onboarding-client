@@ -5,14 +5,27 @@ function statusClass(statut) {
   return 'pending';
 }
 
+function createNavigationBanner(agencyId, title) {
+  return `<div style="background: linear-gradient(135deg, #ffffff 0%, #faf6ec 100%); border: 1px solid #e6dcc5; border-radius: 24px; padding: 12px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px;">
+    <a href="/client/${agencyId}" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #2682B4; font-weight: 600;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="#2682B4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Retour
+    </a>
+    <div style="width: 1px; height: 24px; background: #e6dcc5;"></div>
+    <span style="color: #2682B4; font-weight: 600;">${title}</span>
+  </div>`;
+}
+
 function getAgencyIdFromUrl() {
-  return window.location.pathname.split('/')[2] || 'rec_demoAgency';
+  return window.location.pathname.split('/')[2] || 'rec9eVu9T7XNrlIAf';
 }
 
 async function loadClientData(endpoint, rootSelector) {
   const agencyId = getAgencyIdFromUrl();
-  const response = await fetch(`/api/client/${agencyId}/${endpoint}`);
-  if (!response.ok) throw new Error('Impossible de charger les données client');
+  const response = await fetch(`/client/${agencyId}/api/${endpoint}`);
+  if (!response.ok) throw new Error('Impossible de charger les donnees client');
   const payload = await response.json();
   renderClientData(payload, rootSelector);
 }
@@ -24,45 +37,44 @@ function renderClientData(payload, rootSelector) {
   if (rootSelector === '#overview-root') {
     const agency = payload.agency;
     root.innerHTML = `
-      <section class="hero-card">
-        <div>
+      <section class="hero-banner" style="background-image: url('/estacade-saint-jean-de-monts.jpg')">
+        <div class="hero-overlay"></div>
+        <div class="hero-banner-content">
           <div class="hero-badge">Bienvenue ${agency.prenom || 'client'}</div>
-          <h1>${agency.nomAgence}</h1>
-          <p>Votre onboarding est déjà en cours. Retrouvez ici vos documents, votre contrat et l’avancée de votre mise en place.</p>
-        </div>
-        <div class="row">
+          <p>Votre onboarding est deja en cours. Retrouvez ici vos documents, votre contrat et l'avancee de votre mise en place.</p>
           <span class="status-pill ${statusClass(agency.statutCommercial)}">${agency.statutCommercial}</span>
         </div>
       </section>
       <section class="section-block">
         <div class="section-title">Votre interlocutrice Bluewaive</div>
         <div class="contact-card">
-          <div class="contact-avatar">CH</div>
+          <img src="/christel%20bluewaive.png" alt="Christel" class="contact-photo">
           <div>
             <h3>Christel</h3>
-            <p>Votre accompagnante pour l’onboarding, les documents et les premières étapes de mise en service.</p>
+            <p>Votre accompagnante pour l'onboarding, les documents et les premieres etapes de mise en service.</p>
             <div class="contact-actions">
-              <a href="https://mail.google.com/mail/?view=cm&fs=1&to=christel.bluewaive@gmail.com" target="_blank" rel="noreferrer">Contacter par email</a>
+              <a href="https://mail.google.com/mail/?view=cm&fs=1&to=christel@bluewaive.fr" target="_blank" rel="noreferrer">Contacter par email</a>
             </div>
           </div>
         </div>
       </section>
       <section class="section-block">
-        <div class="section-title">Vue d’ensemble</div>
+        <div class="section-title">Vue d'ensemble</div>
         <div class="kpis">
-          <div class="kpi"><strong>${agency.volumeAppels}</strong><span>appels enregistrés</span></div>
+          <div class="kpi"><strong>${agency.volumeAppels}</strong><span>appels enregistres</span></div>
           <div class="kpi"><strong>${agency.nbAgents}</strong><span>agents</span></div>
           <div class="kpi"><strong>${agency.offreSouscrite.nom}</strong><span>offre souscrite</span></div>
         </div>
       </section>
       <section class="section-block">
-        <div class="section-title">Accès rapides</div>
+        <div class="section-title">Acces rapides</div>
         <div class="grid grid-2">
           <a class="tile" href="/client/${agency.id}/devis"><h3>Devis</h3><p>Consultez votre offre et le statut de votre proposition.</p></a>
-          <a class="tile" href="/client/${agency.id}/factures"><h3>Factures</h3><p>Retrouvez vos factures émises et leurs échéances.</p></a>
-          <a class="tile" href="/client/${agency.id}/contrat"><h3>Contrat</h3><p>Accédez à la version signée et aux dates clés.</p></a>
-          <a class="tile" href="/client/${agency.id}/projet"><h3>Avancement du projet</h3><p>Suivez les étapes de votre onboarding.</p></a>
-          <a class="tile" href="/client/${agency.id}/vapi"><h3>Assistant vocal</h3><p>Consultez l’activité de votre assistant Vapi.</p></a>
+          <a class="tile" href="/client/${agency.id}/factures"><h3>Factures</h3><p>Retrouvez vos factures emises et leurs echeances.</p></a>
+          <a class="tile" href="/client/${agency.id}/contrat"><h3>Contrat</h3><p>Accedez a la version signee et aux dates cles.</p></a>
+          <a class="tile" href="/client/${agency.id}/projet"><h3>Avancement du projet</h3><p>Suivez les etapes de votre onboarding.</p></a>
+          <a class="tile" href="/client/${agency.id}/ressources"><h3>Ressources et documentation</h3><p>Accedez aux guides et materiels de formation.</p></a>
+          <a class="tile" href="/client/${agency.id}/vapi"><h3>Assistant vocal</h3><p>Consultez l'activite de votre assistant Vapi.</p></a>
         </div>
       </section>
     `;
@@ -71,7 +83,8 @@ function renderClientData(payload, rootSelector) {
 
   if (rootSelector === '#devis-root') {
     const data = payload.devis || [];
-    root.innerHTML = `
+    const agencyId = getAgencyIdFromUrl();
+    root.innerHTML = createNavigationBanner(agencyId, 'Devis') + `
       <section class="section-block">
         <div class="section-title">Vos devis</div>
         <div class="grid">
@@ -85,8 +98,8 @@ function renderClientData(payload, rootSelector) {
                 <span class="status-pill ${statusClass(item.statut)}">${item.statut}</span>
               </div>
               <div class="doc-figures">
-                <div class="doc-figure"><span class="label">Montant</span><span class="value doc-amount">${item.montant} €</span></div>
-                <div class="doc-figure"><span class="label">Date d’envoi</span><span class="value">${item.dateEnvoi}</span></div>
+                <div class="doc-figure"><span class="label">Montant</span><span class="value doc-amount">${item.montant} EUR</span></div>
+                <div class="doc-figure"><span class="label">Date d'envoi</span><span class="value">${item.dateEnvoi}</span></div>
               </div>
               ${item.commentaires ? `<div class="meta">${item.commentaires}</div>` : ''}
               <div class="doc-footer">
@@ -103,7 +116,8 @@ function renderClientData(payload, rootSelector) {
 
   if (rootSelector === '#factures-root') {
     const data = payload.factures || [];
-    root.innerHTML = `
+    const agencyId = getAgencyIdFromUrl();
+    root.innerHTML = createNavigationBanner(agencyId, 'Factures') + `
       <section class="section-block">
         <div class="section-title">Vos factures</div>
         <div class="grid">
@@ -117,8 +131,8 @@ function renderClientData(payload, rootSelector) {
                 <span class="status-pill ${statusClass(item.statut)}">${item.statut}</span>
               </div>
               <div class="doc-figures">
-                <div class="doc-figure"><span class="label">Émise le</span><span class="value">${item.dateEmission}</span></div>
-                <div class="doc-figure"><span class="label">Échéance</span><span class="value">${item.dateEcheance}</span></div>
+                <div class="doc-figure"><span class="label">Emise le</span><span class="value">${item.dateEmission}</span></div>
+                <div class="doc-figure"><span class="label">Echeance</span><span class="value">${item.dateEcheance}</span></div>
               </div>
               <div class="doc-footer">
                 <span class="small muted">Document financier</span>
@@ -134,7 +148,8 @@ function renderClientData(payload, rootSelector) {
 
   if (rootSelector === '#contrat-root') {
     const contrat = payload.contrat;
-    root.innerHTML = `
+    const agencyId = getAgencyIdFromUrl();
+    root.innerHTML = createNavigationBanner(agencyId, 'Contrat') + `
       <section class="section-block">
         <div class="section-title">Votre contrat</div>
         <div class="doc-card">
@@ -146,12 +161,12 @@ function renderClientData(payload, rootSelector) {
             <span class="status-pill ${statusClass(contrat.statut)}">${contrat.statut}</span>
           </div>
           <div class="doc-figures">
-            <div class="doc-figure"><span class="label">Montant</span><span class="value doc-amount">${contrat.montant} €</span></div>
-            <div class="doc-figure"><span class="label">Émission</span><span class="value">${contrat.dateEmission}</span></div>
+            <div class="doc-figure"><span class="label">Montant</span><span class="value doc-amount">${contrat.montant} EUR</span></div>
+            <div class="doc-figure"><span class="label">Emission</span><span class="value">${contrat.dateEmission}</span></div>
             <div class="doc-figure"><span class="label">Signature</span><span class="value">${contrat.dateSignature}</span></div>
           </div>
           <div class="doc-footer">
-            <span class="small muted">Document contractuel signé</span>
+            <span class="small muted">Document contractuel signe</span>
             <a class="btn-primary" href="${contrat.lienContrat}" target="_blank" rel="noreferrer">Ouvrir le PDF</a>
           </div>
         </div>
@@ -164,15 +179,16 @@ function renderClientData(payload, rootSelector) {
     const steps = payload.projectSteps || [];
     const completedCount = steps.filter(s => s.reached).length;
     const totalCount = steps.length;
+    const agencyId = getAgencyIdFromUrl();
 
-    root.innerHTML = `
+    root.innerHTML = createNavigationBanner(agencyId, 'Avancement du projet') + `
       <section class="section-block">
         <div class="section-title">Avancement du projet</div>
         <div class="timeline">
           ${steps.map(step => `
             <div class="timeline-step ${step.reached ? 'done' : ''} ${step.active ? 'current' : ''}">
               <strong>${step.label}</strong>
-              <div class="small">${step.reached ? 'Terminé' : 'À venir'}</div>
+              <div class="small">${step.reached ? 'Termine' : 'A venir'}</div>
             </div>
           `).join('')}
         </div>
@@ -190,16 +206,29 @@ function renderClientData(payload, rootSelector) {
           </div>
         </div>
       </section>
+
+      <section class="section-block">
+        <div class="section-title">Prochaines actions</div>
+        <div class="grid">
+          ${(payload.nextActions || []).map((action, i) => `<div class="doc-card"><div><strong>Action ${i + 1}</strong><div class="meta">${action}</div></div></div>`).join("")}
+        </div>
+      </section>
+
+      <section class="section-block">
+        <div class="section-title">Calendrier d'onboarding</div>
+        <div class="grid">
+          ${(payload.calendar || []).map(event => `<div class="doc-card"><div><strong>${event.title}</strong><div class="meta">${event.date}</div></div><span class="status-pill ${event.completed ? "active" : "pending"}">${event.completed ? "Fait" : "A venir"}</span></div>`).join("")}
+        </div>
+      </section>
     `;
 
-    // Charger et exécuter le script donut
     if (typeof renderDonut === 'function') {
       renderDonut({
         svgId: 'donut-global',
         legendId: 'legend-global',
         detailId: 'detail-global',
         data: [
-          { key: 'completed', label: 'Completé', value: completedCount, color: '#1e8e57' },
+          { key: 'completed', label: 'Complete', value: completedCount, color: '#1e8e57' },
           { key: 'pending', label: 'En attente', value: totalCount - completedCount, color: '#e6dcc5' }
         ],
         detailsByKey: {
@@ -213,11 +242,60 @@ function renderClientData(payload, rootSelector) {
     return;
   }
 
+  if (rootSelector === '#compte-root') {
+    const compte = payload.compte || {};
+    const agencyId = getAgencyIdFromUrl();
+    root.innerHTML = createNavigationBanner(agencyId, 'Votre compte') + `
+      <section class="section-block">
+        <div class="section-title">Informations de l'agence</div>
+        <div class="info-grid">
+          <div class="info-field"><label>Nom de l'agence</label><p>${compte.nomAgence}</p></div>
+          <div class="info-field"><label>Contact principal</label><p>${compte.nomContact}</p></div>
+          <div class="info-field"><label>Email</label><p>${compte.email}</p></div>
+          <div class="info-field"><label>Telephone</label><p>${compte.telephone}</p></div>
+          <div class="info-field"><label>Adresse</label><p>${compte.adresse}, ${compte.codePostal} ${compte.ville}</p></div>
+          <div class="info-field"><label>Pays</label><p>${compte.pays}</p></div>
+        </div>
+      </section>
+      <section class="section-block">
+        <div class="section-title">Informations professionnelles</div>
+        <div class="info-grid">
+          <div class="info-field"><label>SIRET</label><p>${compte.siret}</p></div>
+          <div class="info-field"><label>Type d'activite</label><p>${compte.typeActivite}</p></div>
+          <div class="info-field"><label>Nombre d'employes</label><p>${compte.nombreEmployes}</p></div>
+          <div class="info-field"><label>Date de creation</label><p>${compte.dateCreation}</p></div>
+        </div>
+      </section>
+      <section class="section-block">
+        <div class="section-title">Abonnement</div>
+        <div class="info-grid">
+          <div class="info-field"><label>Plan actuel</label><p><strong>${compte.abonnement}</strong></p></div>
+          <div class="info-field"><label>Date d'abonnement</label><p>${compte.dateAbonnement}</p></div>
+          <div class="info-field"><label>Statut</label><p><span class="status-pill active">${compte.statut}</span></p></div>
+        </div>
+      </section>
+    `;
+  }
+
+  if (rootSelector === '#ressources-root') {
+    const agencyId = getAgencyIdFromUrl();
+    root.innerHTML = createNavigationBanner(agencyId, 'Ressources et documentation') + `
+      <section class="section-block">
+        <div class="section-title">Ressources et documentation</div>
+        <div class="grid">
+          ${(payload.resources || []).map(resource => `<div class="doc-card"><div><strong>${resource.title}</strong><div class="meta">${resource.type}</div></div><a class="btn-primary" href="${resource.url}" target="_blank">Acceder</a></div>`).join("")}
+        </div>
+      </section>
+    `;
+    return;
+  }
+
   if (rootSelector === '#vapi-root') {
     const vapi = payload.vapiStats || {};
-    root.innerHTML = `
+    const agencyId = getAgencyIdFromUrl();
+    root.innerHTML = createNavigationBanner(agencyId, 'Assistant vocal') + `
       <section class="section-block">
-        <div class="section-title">Activité assistant vocal</div>
+        <div class="section-title">Activite assistant vocal</div>
         <div class="kpis">
           <div class="kpi"><strong>${vapi.callCount}</strong><span>appels</span></div>
           <div class="kpi"><strong>${vapi.averageDurationMinutes}</strong><span>minutes moyennes</span></div>
@@ -231,9 +309,9 @@ function renderClientData(payload, rootSelector) {
             <div class="doc-card">
               <div>
                 <strong>${call.datetime}</strong>
-                <div class="meta">Durée : ${call.durationMinutes} min</div>
+                <div class="meta">Duree : ${call.durationMinutes} min</div>
               </div>
-              <span class="status-pill ${call.status === 'Terminé' ? 'active' : 'pending'}">${call.status}</span>
+              <span class="status-pill ${call.status === 'Termine' ? 'active' : 'pending'}">${call.status}</span>
             </div>
           `).join('')}
         </div>
@@ -251,12 +329,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const factures = document.querySelector('#factures-root');
   const contrat = document.querySelector('#contrat-root');
   const projet = document.querySelector('#projet-root');
+  const compte = document.querySelector('#compte-root');
+  const ressources = document.querySelector('#ressources-root');
   const vapi = document.querySelector('#vapi-root');
 
-  if (overview) loadClientData('overview', '#overview-root').catch(() => { overview.innerHTML = '<div class="section-block">Données indisponibles.</div>'; });
-  if (devis) loadClientData('devis', '#devis-root').catch(() => { devis.innerHTML = '<div class="section-block">Données indisponibles.</div>'; });
-  if (factures) loadClientData('factures', '#factures-root').catch(() => { factures.innerHTML = '<div class="section-block">Données indisponibles.</div>'; });
-  if (contrat) loadClientData('contrat', '#contrat-root').catch(() => { contrat.innerHTML = '<div class="section-block">Données indisponibles.</div>'; });
-  if (projet) loadClientData('overview', '#projet-root').catch(() => { projet.innerHTML = '<div class="section-block">Données indisponibles.</div>'; });
-  if (vapi) loadClientData('vapi-stats', '#vapi-root').catch(() => { vapi.innerHTML = '<div class="section-block">Données indisponibles.</div>'; });
+  if (overview) loadClientData('overview', '#overview-root').catch(() => { overview.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  if (devis) loadClientData('devis', '#devis-root').catch(() => { devis.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  if (factures) loadClientData('factures', '#factures-root').catch(() => { factures.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  if (contrat) loadClientData('contrat', '#contrat-root').catch(() => { contrat.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  if (projet) loadClientData('overview', '#projet-root').catch(() => { projet.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  if (compte) loadClientData('compte', '#compte-root').catch(() => { compte.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  if (ressources) loadClientData('overview', '#ressources-root').catch(() => { ressources.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  if (vapi) loadClientData('vapi-stats', '#vapi-root').catch(() => { vapi.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
 });
