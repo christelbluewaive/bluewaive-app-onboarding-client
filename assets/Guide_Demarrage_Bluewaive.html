@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guide Client - Bluewaive</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+    }
+    .pdf-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 60px 50px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 3px solid #2682B4;
+    }
+    .header h1 {
+      color: #2682B4;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    .header p {
+      font-size: 16px;
+      color: #666;
+    }
+    .toc {
+      background: #f9f9f9;
+      padding: 30px;
+      border-radius: 8px;
+      margin-bottom: 40px;
+      border-left: 4px solid #2682B4;
+    }
+    .toc h2 {
+      color: #2682B4;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+    .toc ol {
+      margin-left: 20px;
+    }
+    .toc li {
+      margin: 8px 0;
+      color: #555;
+    }
+    .section {
+      margin-bottom: 50px;
+      page-break-inside: avoid;
+    }
+    .section h2 {
+      color: #2682B4;
+      font-size: 24px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e6dcc5;
+    }
+    .section h3 {
+      color: #333;
+      font-size: 16px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .step {
+      background: #f0f7ff;
+      padding: 20px;
+      margin: 15px 0;
+      border-left: 4px solid #4682B4;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: 600;
+      color: #2682B4;
+      margin-bottom: 8px;
+    }
+    .step p {
+      margin: 6px 0;
+      color: #555;
+    }
+    .benefit-box {
+      background: #f0fff4;
+      padding: 20px;
+      border-left: 4px solid #1e8e57;
+      border-radius: 4px;
+      margin: 15px 0;
+    }
+    .benefit-box strong {
+      color: #1e8e57;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .info-box {
+      background: #fffbf0;
+      padding: 20px;
+      border: 1px solid #e6dcc5;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    .info-box strong {
+      color: #2682B4;
+    }
+    .tips {
+      background: #fff3e0;
+      padding: 20px;
+      border-left: 4px solid #c27a00;
+      border-radius: 4px;
+      margin: 15px 0;
+    }
+    .tips strong {
+      color: #c27a00;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .screenshot-note {
+      background: #e8f4f8;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 15px 0;
+      font-size: 14px;
+      color: #555;
+      border-left: 4px solid #2682B4;
+    }
+    .contact-info {
+      background: #2682B4;
+      color: white;
+      padding: 30px;
+      border-radius: 8px;
+      margin-top: 40px;
+      text-align: center;
+    }
+    .contact-info h3 {
+      color: white;
+      margin-bottom: 15px;
+    }
+    .contact-info p {
+      margin: 8px 0;
+      font-size: 16px;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e6dcc5;
+      font-size: 12px;
+      color: #999;
+    }
+    @media print {
+      body { background: white; }
+      .pdf-container { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="pdf-container">
+    <div class="header">
+      <h1>👋 Bienvenue dans Bluewaive</h1>
+      <p>Votre assistant vocal pour capturer 100% de vos appels qualifiés</p>
+    </div>
+
+    <div class="toc">
+      <h2>📑 Table des matières</h2>
+      <ol>
+        <li>Comment ça marche?</li>
+        <li>Accéder à votre tableau de bord</li>
+        <li>Comprendre vos données</li>
+        <li>Gérer vos prospects</li>
+        <li>Bonnes pratiques pour convertir</li>
+        <li>Questions fréquentes</li>
+        <li>Support & Contact</li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <h2>1️⃣ Comment ça marche?</h2>
+
+      <h3>Le fonctionnement en 30 secondes</h3>
+      <p>Bluewaive vous aide à ne jamais perdre un appel et à qualifier automatiquement chaque prospect:</p>
+
+      <div class="step">
+        <div class="step-title">📱 Prospect appelle</div>
+        <p>Un client potentiel appelle votre numéro - même en dehors de vos horaires ou quand vous êtes occupé.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">🎤 Bluewaive répond</div>
+        <p>Un assistant vocal professionnel décroche. Il pose les bonnes questions pour comprendre les besoins du prospect.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">📊 Données centralisées dans Airtable</div>
+        <p>Toutes les informations sont automatiquement enregistrées dans votre base Airtable: budget, type de bien, localisation, calendrier, ET le résumé complet de l'appel.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">✉️ Vous êtes notifié</div>
+        <p>Vous recevez une notification par email avec les détails du prospect. La fiche complète est déjà créée dans Airtable. Prêt à le contacter immédiatement.</p>
+      </div>
+
+      <h3>Les bénéfices réels</h3>
+      <div class="benefit-box">
+        <strong>✓ Zéro appel perdu</strong>
+        Même quand vous êtes en rendez-vous ou en dehors de vos horaires, aucun prospect ne vous échappe.
+      </div>
+
+      <div class="benefit-box">
+        <strong>✓ Prospects qualifiés</strong>
+        Vous recevez les informations essentielles avant d'appeler: budget, type de bien, délai... Gain de temps garanty!
+      </div>
+
+      <div class="benefit-box">
+        <strong>✓ Réactivité maximale</strong>
+        Les prospects reçoivent une réponse immédiate. Cela augmente la confiance et les taux de conversion.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>2️⃣ Accéder à votre tableau de bord</h2>
+
+      <h3>Première connexion</h3>
+      <div class="step">
+        <div class="step-title">1. Ouvrez le lien fourni par Christel</div>
+        <p>Vous recevrez un email avec votre lien d'accès personnel (ex: bluewaive.fr/client/votre-agence)</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">2. Connectez-vous</div>
+        <p>Utilisez l'email et le mot de passe fournis. Conservez-les dans un endroit sûr.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">3. Accueil</div>
+        <p>Vous arrivez sur votre tableau de bord avec un aperçu de votre activité: appels reçus, prospects qualifiés, statuts.</p>
+      </div>
+
+      <h3>Les 4 sections principales</h3>
+      <div class="info-box">
+        <strong>📊 Accueil:</strong> Vue d'ensemble de votre activité. Nombre d'appels, prospects qualifiés, documents importants.
+      </div>
+
+      <div class="info-box">
+        <strong>📈 Avancement du projet:</strong> Suivi de votre mise en place Bluewaive. Étapes complétées et prochaines actions.
+      </div>
+
+      <div class="info-box">
+        <strong>📋 Documents:</strong> Votre contrat, devis, factures et documentation. Tout au même endroit.
+      </div>
+
+      <div class="info-box">
+        <strong>⚙️ Votre compte:</strong> Informations de votre agence, abonnement, données de contact.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>3️⃣ Comprendre vos données</h2>
+
+      <h3>Les informations que Bluewaive capture</h3>
+      <p>Pour chaque appel, vous recevez ces informations essentielles:</p>
+
+      <div class="step">
+        <div class="step-title">👤 Identité du prospect</div>
+        <p>Nom, téléphone, email (si disponible). Toutes les infos nécessaires pour le recontacter.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">💰 Budget</div>
+        <p>Le budget envisagé par le prospect. Essentiel pour qualifier et prioriser les appels.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">🏠 Type de bien</div>
+        <p>Cherche-t-il un appartement, une maison, un terrain? Achat ou vente?</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">📍 Localisation</div>
+        <p>Quelle zone l'intéresse? Paris, banlieue, région... Crucial pour la segmentation.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">⏰ Calendrier</div>
+        <p>Urgence: moins d'un mois, 1-3 mois, 3-6 mois? Ça aide à prioriser vos appels.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">📝 Résumé complet de l'appel</div>
+        <p>Transcription détaillée de la conversation. Tous les détails de ce qui a été dit, enregistrés automatiquement dans Airtable.</p>
+      </div>
+
+      <h3>Exemple concret (dans Airtable)</h3>
+      <div class="info-box">
+        <strong>Fiche prospect créée automatiquement le 15/07 à 19h30:</strong>
+        <p><strong>Nom:</strong> Jean Dupont | <strong>Téléphone:</strong> 06 12 34 56 78</p>
+        <p><strong>Budget:</strong> 350 000€ | <strong>Type:</strong> Achat d'appartement | <strong>Localisation:</strong> Lyon 6ème</p>
+        <p><strong>Calendrier:</strong> 1-3 mois | <strong>Résumé de l'appel:</strong> "Couple avec 2 enfants, cherche 100m² avec parc à proximité. Très intéressés. À rappeler rapidement."</p>
+        <p>→ <strong>Tout est dans Airtable.</strong> Vous appelez Jean le lendemain matin avec toutes les infos. Il est impressionné par votre réactivité!</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>4️⃣ Gérer vos prospects</h2>
+
+      <h3>Organiser votre base de prospects</h3>
+      <p>Bluewaive stocke automatiquement tous vos prospects dans une base centralisée. Vous pouvez:</p>
+
+      <div class="benefit-box">
+        <strong>📊 Filtrer par critères</strong>
+        Montrer seulement les prospects avec un budget > 300k€ ou intéressés par un achat dans votre quartier.
+      </div>
+
+      <div class="benefit-box">
+        <strong>📈 Trier par urgence</strong>
+        Voir d'abord les prospects qui veulent acheter dans 1 mois (plus chauds) vs 6 mois (leads froids).
+      </div>
+
+      <div class="benefit-box">
+        <strong>✅ Suivre le statut</strong>
+        Marquer un prospect comme "contacté", "rendez-vous prévu" ou "perdu" pour éviter les oublis.
+      </div>
+
+      <div class="benefit-box">
+        <strong>📞 Recontacter automatiquement</strong>
+        Définir des rappels pour relancer un prospect après quelques jours si pas de réponse.
+      </div>
+
+      <h3>Meilleure pratique</h3>
+      <div class="tips">
+        <strong>💡 Conseil:</strong>
+        Appelez les prospects dans les 2 heures suivant l'appel initial. C'est à ce moment qu'ils sont les plus "chauds" et réactifs. Bluewaive vous notifie immédiatement pour que vous puissiez faire ce suivi rapidement.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>5️⃣ Bonnes pratiques pour convertir</h2>
+
+      <h3>Maximiser vos taux de conversion</h3>
+
+      <div class="step">
+        <div class="step-title">⚡ Réactivité = Conversion</div>
+        <p>Plus vous êtes rapide à rappeler, plus haut est votre taux de conversion. Visez un rappel < 2h.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">📌 Personnalisez votre approche</div>
+        <p>Lisez les notes de Bluewaive avant d'appeler. Vous saurez déjà ce que cherche le prospect.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">🎯 Priorisez les chauds</div>
+        <p>Focus d'abord sur les prospects avec urgence (< 1 mois). Laissez les leads froids (6+ mois) pour plus tard.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">📅 Suivez vos rendez-vous</div>
+        <p>Mettez à jour le statut dans Bluewaive. "Rendez-vous prévu le 20/07" aide votre équipe à coordonner.</p>
+      </div>
+
+      <h3>Cas d'usage: Achat, Vente, Location</h3>
+      <div class="info-box">
+        <strong>🏘️ Acheteurs:</strong> Plus haute conversion potentielle. Budget et urgence clairs. Planifier visite rapidement. Financement souvent prêt.
+      </div>
+
+      <div class="info-box">
+        <strong>🔑 Vendeurs:</strong> Évaluer la motivation. "Urgence de vendre?" vs "Juste explorer". Adapter votre timing. Estimer la valeur du bien.
+      </div>
+
+      <div class="info-box">
+        <strong>🏠 Locataires:</strong> Volume potentiellement plus élevé. Urgence souvent immédiate (< 2 semaines). Critères: surface, prix de loyer, proximité transports. Réactivité = clé du succès.
+      </div>
+
+      <h3>Éviter les pièges</h3>
+      <div class="tips">
+        <strong>❌ Erreur commune:</strong> Ignorer les prospects "prospects" reçus hors horaires. Bluewaive les capture quand vous ne pouvez pas répondre. C'est une OPPORTUNITÉ, pas une perturbation. Plus d'appels = plus de conversions.
+      </div>
+
+      <div class="tips">
+        <strong>✅ Bonne pratique:</strong> Dédier 15 min le matin à relancer les prospects de la veille. Un système simple = résultats constants.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>6️⃣ Questions fréquentes</h2>
+
+      <h3>Puis-je partager l'accès avec mon équipe?</h3>
+      <div class="info-box">
+        Oui! Contactez Christel pour ajouter des utilisateurs à votre compte. Chaque agent peut voir et gérer les prospects.
+      </div>
+
+      <h3>Les prospects sont-ils préservés?</h3>
+      <div class="info-box">
+        Oui, 100% sécurisé. Bluewaive respecte le RGPD. Vos données sont hébergées en France et protégées.
+      </div>
+
+      <h3>Puis-je exporter mes données?</h3>
+      <div class="info-box">
+        Oui! Vous pouvez exporter la liste de vos prospects en Excel ou l'intégrer avec votre CRM habituel.
+      </div>
+
+      <h3>Que faire si un prospect n'est pas bien qualifié?</h3>
+      <div class="info-box">
+        Bluewaive améliore continuellement. Si des questions ne correspondent pas à vos besoins, dites-le à Christel. Elle pourra adapter le scénario.
+      </div>
+
+      <h3>Combien de prospects en moyenne?</h3>
+      <div class="info-box">
+        Ça dépend de votre volume d'appels entrants. Bluewaive capture TOUS les appels - même ceux que vous auriez ratés. Comptez potentiellement + 30-50% de prospects qualifiés.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>7️⃣ Support & Contact</h2>
+
+      <h3>Vous avez une question?</h3>
+      <p>Christel est disponible pour vous aider:</p>
+
+      <div class="contact-info">
+        <h3>📞 Christel Lauret - Fondatrice Bluewaive</h3>
+        <p><a href="https://mail.google.com/mail/?view=cm&fs=1&to=christel@bluewaive.fr" target="_blank" rel="noreferrer" style="color: white; text-decoration: underline;">✉️ christel@bluewaive.fr</a></p>
+        <p>📱 06 95 70 73 82</p>
+        <p style="margin-top: 20px; font-size: 14px; opacity: 0.9;">✉️ Réponse garantie sous 24h</p>
+        <p style="margin-top: 8px;"><a href="https://calendly.com/christel-bluewaive/30min?primary_color=2682B4" target="_blank" rel="noreferrer" style="color: white; text-decoration: underline;">📅 Booker un call urgent</a></p>
+      </div>
+
+      <h3>Sujets courants d'assistance</h3>
+      <div class="step">
+        <div class="step-title">Je ne reçois pas mes notifications</div>
+        <p>Vérifiez vos paramètres de notification. Christel peut ajouter plus d'email ou configurer SMS.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">J'ai perdu mon mot de passe</div>
+        <p>Cliquez sur "Mot de passe oublié" sur la page de connexion ou contactez Christel.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">Je veux ajouter un agent à mon équipe</div>
+        <p>Christel peut créer de nouveaux comptes pour votre équipe en quelques minutes.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title">Je veux adapter le scénario de qualification</div>
+        <p>Contactez Christel. Elle peut ajuster les questions en fonction de vos spécificités métier.</p>
+      </div>
+
+      <h3>En cas d'urgence</h3>
+      <div class="benefit-box">
+        <strong>Garantie 30 jours:</strong> Si vous n'êtes pas satisfait, remboursement complet sans engagement. Zéro risque.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>© 2026 Bluewaive - Guide Client | Créé pour vous réussir</p>
+      <p>Questions? christel@bluewaive.fr | 06 95 70 73 82</p>
+    </div>
+  </div>
+</body>
+</html>

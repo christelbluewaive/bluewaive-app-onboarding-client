@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connexion — Espace Client Bluewaive</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .login-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #2682B4 0%, #1a5c8d 100%);
+      }
+      .login-card {
+        background: white;
+        border-radius: 12px;
+        padding: 48px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      .login-card h1 {
+        font-size: 28px;
+        margin-bottom: 12px;
+        color: #1a1a1a;
+      }
+      .login-card .subtitle {
+        color: #666;
+        margin-bottom: 32px;
+        font-size: 14px;
+      }
+      .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .form-group label {
+        font-weight: 600;
+        color: #1a1a1a;
+        font-size: 14px;
+      }
+      .form-group input {
+        padding: 12px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+      }
+      .form-group input:focus {
+        outline: none;
+        border-color: #2682B4;
+      }
+      .login-form button {
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #2682B4 0%, #1a5c8d 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      .login-form button:hover {
+        opacity: 0.9;
+      }
+      .login-form button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .error-message {
+        padding: 12px 16px;
+        background: #fee;
+        border: 1px solid #fcc;
+        border-radius: 8px;
+        color: #c33;
+        font-size: 14px;
+        display: none;
+      }
+      .error-message.show {
+        display: block;
+      }
+      .demo-credentials {
+        padding: 16px;
+        background: #f5f5f5;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #666;
+        margin-top: 24px;
+      }
+      .demo-credentials strong {
+        color: #1a1a1a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-card">
+        <h1>Connexion</h1>
+        <p class="subtitle">Accédez à votre espace client Bluewaive</p>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <form class="login-form" id="loginForm">
+          <div class="form-group">
+            <label for="email">Adresse email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="vous@example.com"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Mot de passe</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          <button type="submit" id="submitBtn">Se connecter</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          const errorEl = document.getElementById('errorMessage');
+          const submitBtn = document.getElementById('submitBtn');
+
+          errorEl.classList.remove('show');
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Connexion en cours...';
+
+          try {
+            const response = await fetch('/api/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.ok) {
+              localStorage.setItem('userEmail', email);
+              window.location.href = `/client/${data.agencyId}`;
+            } else {
+              errorEl.textContent = data.error || 'Identifiants invalides';
+              errorEl.classList.add('show');
+            }
+          } catch (error) {
+            errorEl.textContent = 'Erreur de connexion';
+            errorEl.classList.add('show');
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Se connecter';
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
