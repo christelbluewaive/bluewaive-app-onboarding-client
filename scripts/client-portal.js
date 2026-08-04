@@ -74,7 +74,7 @@ function renderClientData(payload, rootSelector) {
           <a class="tile" href="/client/${agency.id}/contrat"><h3>Contrat</h3><p>Accedez a la version signee et aux dates cles.</p></a>
           <a class="tile" href="/client/${agency.id}/projet"><h3>Avancement du projet</h3><p>Suivez les etapes de votre onboarding.</p></a>
           <a class="tile" href="/client/${agency.id}/ressources"><h3>Ressources et documentation</h3><p>Accedez aux guides et materiels de formation.</p></a>
-          <a class="tile" href="/client/${agency.id}/vapi"><h3>Assistant vocal</h3><p>Consultez l'activite de votre assistant Vapi.</p></a>
+          <a class="tile" href="/client/${agency.id}/retell"><h3>Assistant vocal</h3><p>Consultez l'activite de votre assistant Retell.</p></a>
         </div>
       </section>
     `;
@@ -290,22 +290,22 @@ function renderClientData(payload, rootSelector) {
     return;
   }
 
-  if (rootSelector === '#vapi-root') {
-    const vapi = payload.vapiStats || {};
+  if (rootSelector === '#retell-root') {
+    const retell = payload.retellStats || {};
     const agencyId = getAgencyIdFromUrl();
     root.innerHTML = createNavigationBanner(agencyId, 'Assistant vocal') + `
       <section class="section-block">
         <div class="section-title">Activite assistant vocal</div>
         <div class="kpis">
-          <div class="kpi"><strong>${vapi.callCount}</strong><span>appels</span></div>
-          <div class="kpi"><strong>${vapi.averageDurationMinutes}</strong><span>minutes moyennes</span></div>
-          <div class="kpi"><strong>${vapi.status}</strong><span>statut</span></div>
+          <div class="kpi"><strong>${retell.callCount}</strong><span>appels</span></div>
+          <div class="kpi"><strong>${retell.averageDurationMinutes}</strong><span>minutes moyennes</span></div>
+          <div class="kpi"><strong>${retell.status}</strong><span>statut</span></div>
         </div>
       </section>
       <section class="section-block">
         <div class="section-title">Derniers appels</div>
         <div class="grid">
-          ${(vapi.lastCalls || []).map(call => `
+          ${(retell.lastCalls || []).map(call => `
             <div class="doc-card">
               <div>
                 <strong>${call.datetime}</strong>
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const projet = document.querySelector('#projet-root');
   const compte = document.querySelector('#compte-root');
   const ressources = document.querySelector('#ressources-root');
-  const vapi = document.querySelector('#vapi-root');
+  const retell = document.querySelector('#retell-root');
 
   if (overview) loadClientData('overview', '#overview-root').catch(() => { overview.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
   if (devis) loadClientData('devis', '#devis-root').catch(() => { devis.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
@@ -340,5 +340,5 @@ document.addEventListener('DOMContentLoaded', () => {
   if (projet) loadClientData('overview', '#projet-root').catch(() => { projet.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
   if (compte) loadClientData('compte', '#compte-root').catch(() => { compte.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
   if (ressources) loadClientData('overview', '#ressources-root').catch(() => { ressources.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (vapi) loadClientData('vapi-stats', '#vapi-root').catch(() => { vapi.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  if (retell) loadClientData('retell-stats', '#retell-root').catch(() => { retell.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
 });

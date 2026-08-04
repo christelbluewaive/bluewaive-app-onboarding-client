@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Assistant vocal — Espace Client</title>
+    <title>Espace Client</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -11,12 +11,16 @@
       <header class="topbar">
         <div class="brand">
           <img class="brand-logo" src="/logo-light-bg.png" alt="Bluewaive" />
-          <span class="muted">Activité assistant vocal</span>
+          <h1 class="brand-title">Espace Client</h1>
         </div>
-        <a class="pill" id="home-link" href="/client/rec_demoAgency">Retour à l’accueil</a>
+        <div class="topbar-actions">
+          <a class="nav-link" id="home-link" href="/client/rec9eVu9T7XNrlIAf">Accueil</a>
+          <a class="nav-link" id="compte-link" href="/client/rec9eVu9T7XNrlIAf/compte">Votre compte</a>
+        </div>
       </header>
-      <div id="vapi-root"></div>
+      <div id="retell-root"></div>
     </div>
+    <script src="/scripts/auth.js"></script>
     <script src="/scripts/client-portal.js"></script>
   </body>
 </html>

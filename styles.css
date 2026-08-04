@@ -24,25 +24,39 @@ body {
 a { color: var(--brand); text-decoration: none; }
 .page-shell { max-width: 1120px; margin: 0 auto; padding: 32px 20px 60px; }
 .topbar {
-  display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px;
+  position: relative; display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px;
   background: linear-gradient(135deg, #ffffff 0%, #faf6ec 100%); border: 1px solid var(--line); border-radius: 24px; padding: 20px 24px; box-shadow: var(--shadow);
 }
 .topbar .brand { display: flex; align-items: center; gap: 14px; }
+.brand-title { position: absolute; left: 50%; transform: translateX(-50%); margin: 0; font-size: 24px; font-weight: 700; color: #2682B4; white-space: nowrap; }
+.topbar-actions { display: flex; align-items: center; gap: 12px; }
+.nav-link { color: #2682B4; font-weight: 600; font-size: 14px; text-decoration: none; padding: 8px 12px; border-radius: 6px; transition: background 0.2s; }
+.nav-link:hover { background: #f0f0f0; }
 .brand-logo { height: 36px; width: auto; display: block; border-radius: 10px; }
 .topbar .brand strong { font-size: 1.05rem; display: block; }
 .topbar .brand .muted { font-size: 0.95rem; }
 .topbar .pill { background: var(--brand-soft); color: var(--brand); border-radius: 999px; padding: 8px 12px; font-size: 0.9rem; font-weight: 600; }
-.hero-card {
-  display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 24px 24px; border-radius: 24px; background: linear-gradient(135deg, #ffffff 0%, #faf3e0 100%); border: 1px solid var(--line); box-shadow: var(--shadow); margin-bottom: 18px;
+.hero-banner {
+  position: relative; width: 100%; height: 240px; background-size: cover; background-position: center; margin-bottom: 32px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 24px;
 }
-.hero-card h1 { margin: 0 0 8px; font-size: 1.45rem; }
-.hero-card p { margin: 0; color: var(--muted); line-height: 1.5; }
-.hero-card .hero-badge { background: var(--brand-soft); color: var(--brand); padding: 8px 12px; border-radius: 999px; font-weight: 700; font-size: 0.9rem; }
+.hero-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35); }
+.hero-banner-content { position: relative; z-index: 2; color: white; text-align: center; max-width: 600px; padding: 30px 20px; }
+.hero-banner-content .hero-badge { background: rgba(255, 255, 255, 0.25); color: #fff; padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 0.95rem; display: inline-block; margin-bottom: 12px; backdrop-filter: blur(10px); }
+.hero-banner-content p { margin: 8px 0; font-size: 1rem; line-height: 1.5; color: rgba(255, 255, 255, 0.95); }
+.hero-banner-content .status-pill { margin-top: 12px; }
+@media (max-width: 768px) {
+  .hero-banner { height: 200px; }
+  .hero-banner-content { padding: 20px 16px; }
+  .hero-banner-content p { font-size: 0.95rem; }
+}
 .contact-card {
   display: flex; align-items: center; gap: 16px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 18px; background: #fffdf7; box-shadow: 0 8px 24px rgba(40, 30, 10, 0.04);
 }
 .contact-avatar {
   width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), #8fb3d1); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem;
+}
+.contact-photo {
+  width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--brand-soft); flex-shrink: 0;
 }
 .contact-card h3 { margin: 0 0 4px; font-size: 1rem; }
 .contact-card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
@@ -100,6 +114,10 @@ a { color: var(--brand); text-decoration: none; }
 .donut-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--brand-soft); font-size: 0.85rem; }
 .donut-detail ul { margin: 0; padding-left: 18px; }
 .donut-detail li { margin: 4px 0; color: var(--muted); }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; }
+.info-field { display: flex; flex-direction: column; gap: 8px; }
+.info-field label { font-weight: 600; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.info-field p { margin: 0; font-size: 1rem; color: var(--text); }
 
 @media (max-width: 800px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
