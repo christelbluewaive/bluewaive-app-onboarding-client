@@ -11,10 +11,5 @@
       "src": "/(.*)",
       "dest": "api/index.js"
     }
-  ],
-  "env": {
-    "AIRTABLE_BASE_ID": "@airtable_base_id",
-    "AIRTABLE_API_KEY": "@airtable_api_key",
-    "VAPI_API_KEY": "@vapi_api_key"
-  }
+  ]
 }
