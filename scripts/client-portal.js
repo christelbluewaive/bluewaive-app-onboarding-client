@@ -425,6 +425,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const homeLink = document.querySelector('#home-link');
   if (homeLink) homeLink.href = `/client/${getAgencyIdFromUrl()}`;
 
+  const compteLink = document.querySelector('#compte-link');
+  if (compteLink) compteLink.href = `/client/${getAgencyIdFromUrl()}/compte`;
+
   const overview = document.querySelector('#overview-root');
   const devis = document.querySelector('#devis-root');
   const factures = document.querySelector('#factures-root');
