@@ -116,6 +116,26 @@ a { color: var(--brand); text-decoration: none; }
 .legend-color { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
 .donut-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--brand-soft); font-size: 0.85rem; }
 .donut-detail ul { margin: 0; padding-left: 18px; }
+
+/* Progression globale - bloc premium (donut + resume + liste des etapes) */
+.progress-global { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+.progress-global-donut { flex: 0 0 auto; }
+.donut-chart-lg { width: 200px; height: 200px; min-width: 200px; }
+.donut-percent-lg { font-size: 1.9rem; }
+.progress-global-summary { flex: 1 1 220px; min-width: 220px; }
+.progress-global-headline { font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0 0 14px; letter-spacing: -0.01em; }
+.progress-global-stats { display: flex; flex-direction: column; gap: 10px; }
+.progress-stat { display: flex; align-items: center; gap: 10px; }
+.progress-stat-dot { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+.progress-stat-label { flex: 1; color: var(--muted); font-size: 0.92rem; }
+.progress-stat-value { font-weight: 800; font-size: 1.1rem; color: var(--text); }
+.progress-global-steps { display: flex; flex-direction: column; gap: 8px; flex-basis: 100%; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--brand-soft); }
+.progress-global-step { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; }
+@media (max-width: 640px) {
+  .progress-global { flex-direction: column; align-items: stretch; }
+  .progress-global-donut { display: flex; justify-content: center; }
+  .donut-chart-lg { width: 160px; height: 160px; min-width: 160px; }
+}
 .donut-detail li { margin: 4px 0; color: var(--muted); }
 .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; }
 .info-field { display: flex; flex-direction: column; gap: 8px; }

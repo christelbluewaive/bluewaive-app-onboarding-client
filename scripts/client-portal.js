@@ -221,15 +221,37 @@ function renderClientData(payload, rootSelector) {
         <div class="section-title">Progression globale</div>
         <div class="donut-grid">
           <div class="donut-panel">
-            <div class="donut-body">
-              <div class="donut-percent-wrap">
-                <svg id="donut-global" class="donut-chart" viewBox="0 0 120 120"></svg>
-                <div class="donut-percent">${globalPercent}%</div>
+            <div class="progress-global">
+              <div class="progress-global-donut">
+                <div class="donut-percent-wrap">
+                  <svg id="donut-global" class="donut-chart donut-chart-lg" viewBox="0 0 120 120"></svg>
+                  <div class="donut-percent donut-percent-lg">${globalPercent}%</div>
+                </div>
               </div>
-              <div class="donut-legend" id="legend-global"></div>
+              <div class="progress-global-summary">
+                <div class="progress-global-headline">${completedCount} étape${completedCount > 1 ? 's' : ''} terminée${completedCount > 1 ? 's' : ''} sur ${totalCount}</div>
+                <div class="progress-global-stats">
+                  <div class="progress-stat">
+                    <span class="progress-stat-dot" style="background:#1e8e57"></span>
+                    <span class="progress-stat-label">Complétées</span>
+                    <span class="progress-stat-value">${completedCount}</span>
+                  </div>
+                  <div class="progress-stat">
+                    <span class="progress-stat-dot" style="background:#e6dcc5"></span>
+                    <span class="progress-stat-label">En attente</span>
+                    <span class="progress-stat-value">${totalCount - completedCount}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="progress-global-steps">
+                ${stepsWithStatus.map(step => `
+                  <div class="progress-global-step">
+                    <span class="status-pill ${step.reached ? 'active' : 'pending'}">${step.statut}</span>
+                    <span>${step.label}</span>
+                  </div>
+                `).join('')}
+              </div>
             </div>
-            <div class="meta">${completedCount} étape${completedCount > 1 ? 's' : ''} terminée${completedCount > 1 ? 's' : ''} sur ${totalCount}</div>
-            <div class="donut-detail" id="detail-global"></div>
           </div>
         </div>
       </section>
@@ -266,16 +288,10 @@ function renderClientData(payload, rootSelector) {
       if (totalCount > 0) {
         renderDonut({
           svgId: 'donut-global',
-          legendId: 'legend-global',
-          detailId: 'detail-global',
           data: [
             { key: 'completed', label: 'Complete', value: completedCount, color: '#1e8e57' },
             { key: 'pending', label: 'En attente', value: totalCount - completedCount, color: '#e6dcc5' }
-          ],
-          detailsByKey: {
-            completed: steps.filter(s => s.reached).map(s => s.label),
-            pending: steps.filter(s => !s.reached).map(s => s.label)
-          }
+          ]
         });
       }
     } else {
