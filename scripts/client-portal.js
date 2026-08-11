@@ -89,6 +89,7 @@ function renderClientData(payload, rootSelector) {
 
   if (rootSelector === '#overview-root') {
     const agency = payload.agency;
+    const agencyInitial = (agency.nomAgence || 'A').trim().charAt(0).toUpperCase() || 'A';
     root.innerHTML = `
       <section class="hero-banner" style="background-image: url('/estacade-saint-jean-de-monts.png')">
         <div class="hero-overlay"></div>
@@ -96,6 +97,18 @@ function renderClientData(payload, rootSelector) {
           <div class="hero-badge">Bienvenue ${agency.prenom || 'client'}</div>
           <p>Votre onboarding est deja en cours. Retrouvez ici vos documents, votre contrat et l'avancee de votre mise en place.</p>
           <span class="status-pill ${statusClass(agency.statutCommercial)}">${agency.statutCommercial}</span>
+        </div>
+      </section>
+      <section class="section-block">
+        <div class="section-title">Votre assistante vocale</div>
+        <div class="contact-card">
+          ${agency.logoUrl
+            ? `<img src="${agency.logoUrl}" alt="Logo ${agency.nomAgence || 'agence'}" class="agency-logo">`
+            : `<div class="contact-avatar">${agencyInitial}</div>`}
+          <div>
+            <h3>Emma</h3>
+            <p>Assistante vocale de ${agency.nomAgence || 'votre agence'}</p>
+          </div>
         </div>
       </section>
       <section class="section-block">
@@ -481,7 +494,7 @@ function renderClientData(payload, rootSelector) {
         <div class="section-title">Dernières activités prospects</div>
         <div class="grid">
           ${activityItems.length ? activityItems.map(item => `
-            <div class="doc-card">
+            <div class="doc-card${item.prospectToken ? ' doc-card-clickable' : ''}"${item.prospectToken ? ` data-prospect-token="${item.prospectToken}"` : ''}>
               <div>
                 <strong>${item.label}</strong>
                 <div class="meta">${item.date || ''}</div>
@@ -491,7 +504,70 @@ function renderClientData(payload, rootSelector) {
         </div>
       </section>
     `;
+    initProspectLinks(agencyId);
   }
+
+  if (rootSelector === '#prospect-root') {
+    const p = payload.prospect;
+    const agencyId = getAgencyIdFromUrl();
+    const fieldRows = [
+      ['Profil', p.profil],
+      ['Type de bien', p.typeBien],
+      ['Commune / zone', p.communeZone],
+      ['Code postal', p.codePostal],
+      ['Département', p.departement],
+      ['Budget / prix', p.budget],
+      ['Délai', p.delai],
+      ['Moment de rappel', p.momentDeRappel],
+      ['Priorité', p.priorite],
+      ['Statut', p.statut],
+      ['Date de l\'appel', p.dateAppel],
+      ['Rendez-vous', p.dateRdv],
+      ['Téléphone', p.telephone],
+      ['Email', p.email]
+    ].filter(([, value]) => value);
+
+    root.innerHTML = createNavigationBanner(agencyId, 'Fiche prospect') + `
+      <section class="section-block">
+        <div class="section-title">${[p.prenom, p.nom].filter(Boolean).join(' ') || 'Prospect'}</div>
+        <div class="info-grid">
+          ${fieldRows.map(([label, value]) => `<div class="info-field"><label>${label}</label><p>${value}</p></div>`).join('')}
+        </div>
+      </section>
+      ${p.motivation ? `<section class="section-block"><div class="section-title">Motivation</div><p class="meta">${p.motivation}</p></section>` : ''}
+      ${p.resume ? `<section class="section-block"><div class="section-title">Résumé IA</div><p class="meta">${p.resume}</p></section>` : ''}
+      ${p.resumeRdv ? `<section class="section-block"><div class="section-title">Résumé retour RDV</div><p class="meta">${p.resumeRdv}</p></section>` : ''}
+      ${p.relances && p.relances.length ? `
+        <section class="section-block">
+          <div class="section-title">Relances</div>
+          <div class="grid">
+            ${p.relances.map(r => `
+              <div class="doc-card">
+                <div>
+                  <strong>${r.action || 'Relance'}</strong>
+                  <div class="meta">${r.date || ''}${r.statut ? ` · ${r.statut}` : ''}</div>
+                  ${r.resume ? `<div class="meta">${r.resume}</div>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      ` : ''}
+    `;
+    return;
+  }
+}
+
+// Rend cliquables les cartes de "Dernières activités prospects" qui portent un jeton
+// (jamais un ID Airtable brut). Le jeton transite par sessionStorage, jamais par l'URL
+// visible du navigateur.
+function initProspectLinks(agencyId) {
+  document.querySelectorAll('[data-prospect-token]').forEach((el) => {
+    el.addEventListener('click', () => {
+      sessionStorage.setItem('bw_prospect_token', el.dataset.prospectToken);
+      window.location.href = `/client/${agencyId}/prospect`;
+    });
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -509,6 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const compte = document.querySelector('#compte-root');
   const ressources = document.querySelector('#ressources-root');
   const retell = document.querySelector('#retell-root');
+  const prospect = document.querySelector('#prospect-root');
 
   if (overview) loadClientData('overview', '#overview-root').catch(() => { overview.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
   if (devis) loadClientData('devis', '#devis-root').catch(() => { devis.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
@@ -518,4 +595,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (compte) loadClientData('compte', '#compte-root').catch(() => { compte.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
   if (ressources) loadClientData('overview', '#ressources-root').catch(() => { ressources.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
   if (retell) loadClientData('retell-stats', '#retell-root').catch(() => { retell.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+
+  // Fiche prospect : le jeton vient de sessionStorage (jamais de l'URL visible),
+  // depose par initProspectLinks() au clic depuis Assistant vocal.
+  if (prospect) {
+    const agencyId = getAgencyIdFromUrl();
+    const token = sessionStorage.getItem('bw_prospect_token');
+    if (!token) {
+      prospect.innerHTML = createNavigationBanner(agencyId, 'Fiche prospect') + '<section class="section-block"><div class="meta">Aucun prospect sélectionné. Retournez à Assistant vocal et cliquez sur un prospect.</div></section>';
+    } else {
+      fetch(`/client/${agencyId}/api/prospect?token=${encodeURIComponent(token)}`)
+        .then((response) => (response.ok ? response.json() : Promise.reject(new Error('not ok'))))
+        .then((data) => renderClientData(data, '#prospect-root'))
+        .catch(() => {
+          prospect.innerHTML = createNavigationBanner(agencyId, 'Fiche prospect') + '<section class="section-block"><div class="meta">Prospect introuvable ou lien expiré. Retournez à Assistant vocal.</div></section>';
+        });
+    }
+  }
 });
