@@ -353,34 +353,59 @@ function renderClientData(payload, rootSelector) {
     const voiceOs = payload.voiceOsStats || { connected: false };
     const agencyId = getAgencyIdFromUrl();
 
-    const kpiCards = [];
-    if (voiceOs.connected) {
-      kpiCards.push(`<div class="kpi"><strong>${voiceOs.leadsCount}</strong><span>leads crees</span></div>`);
-      kpiCards.push(`<div class="kpi"><strong>${voiceOs.rdvCount}</strong><span>RDV pris</span></div>`);
-      kpiCards.push(`<div class="kpi"><strong>${voiceOs.profils.acheteur}</strong><span>acheteurs</span></div>`);
-      kpiCards.push(`<div class="kpi"><strong>${voiceOs.profils.vendeur}</strong><span>vendeurs</span></div>`);
-      kpiCards.push(`<div class="kpi"><strong>${voiceOs.priorites.chaud}</strong><span>leads CHAUD</span></div>`);
-      kpiCards.push(`<div class="kpi"><strong>${voiceOs.priorites.tiede}</strong><span>leads TIEDE</span></div>`);
-      kpiCards.push(`<div class="kpi"><strong>${voiceOs.relancesCount}</strong><span>relances creees</span></div>`);
-    }
-    // Nombre d'appels reels et duree moyenne : uniquement si une vraie source Retell
-    // (RETELL_API_KEY + numero) repond. Jamais de chiffre invente sinon.
-    kpiCards.push(`<div class="kpi"><strong>${retell ? retell.callCount : 'Non disponible'}</strong><span>appels</span></div>`);
-    kpiCards.push(`<div class="kpi"><strong>${retell ? retell.averageDurationMinutes : 'Non disponible'}</strong><span>minutes moyennes</span></div>`);
-    kpiCards.push(`<div class="kpi"><strong>${retell ? retell.status : 'Non disponible'}</strong><span>statut assistant</span></div>`);
+    // Le backend Retell renvoie un statut technique de call_status (ex. "ended").
+    // On ne l'affiche jamais tel quel au client : traduction en libelle client-friendly.
+    // Pas de notion de statut "assistant actif/inactif" disponible en V1 - la carte
+    // presente donc le dernier appel, pas un statut de disponibilite de l'assistant.
+    const CALL_STATUS_LABELS = {
+      ended: 'Terminé',
+      error: 'Erreur',
+      ongoing: 'En cours',
+      registered: 'En attente'
+    };
+    const dernierAppelLabel = (retell && retell.status)
+      ? (CALL_STATUS_LABELS[retell.status] || retell.status)
+      : 'Non disponible';
 
+    // Bloc 1 : Performance de l'agent vocal (appels reels Retell + volumes Voice OS)
+    const performanceCards = [
+      `<div class="kpi"><strong>${retell ? retell.callCount : 'Non disponible'}</strong><span>Appels</span></div>`,
+      `<div class="kpi"><strong>${retell ? retell.averageDurationMinutes : 'Non disponible'}</strong><span>Durée moyenne (min)</span></div>`,
+      `<div class="kpi"><strong>${dernierAppelLabel}</strong><span>Dernier appel</span></div>`,
+      `<div class="kpi"><strong>${voiceOs.connected ? voiceOs.leadsCount : 'Non disponible'}</strong><span>Leads créés</span></div>`,
+      `<div class="kpi"><strong>${voiceOs.connected ? voiceOs.rdvCount : 'Non disponible'}</strong><span>RDV pris</span></div>`,
+      `<div class="kpi"><strong>${voiceOs.connected ? voiceOs.relancesCount : 'Non disponible'}</strong><span>Relances créées</span></div>`
+    ];
+
+    // Bloc 2 : Qualification commerciale (uniquement si Voice OS connecte)
+    const qualificationCards = voiceOs.connected ? [
+      `<div class="kpi"><strong>${voiceOs.profils.acheteur}</strong><span>Acheteurs</span></div>`,
+      `<div class="kpi"><strong>${voiceOs.profils.vendeur}</strong><span>Vendeurs</span></div>`,
+      `<div class="kpi"><strong>${voiceOs.priorites.chaud}</strong><span>Leads CHAUD</span></div>`,
+      `<div class="kpi"><strong>${voiceOs.priorites.tiede}</strong><span>Leads TIÈDE</span></div>`,
+      `<div class="kpi"><strong>${voiceOs.priorites.froid}</strong><span>Leads FROID</span></div>`
+    ] : [];
+
+    // Bloc 3 : Dernières activités prospects (donnees inchangees, section renommee)
     const activityItems = voiceOs.connected ? (voiceOs.recentActivity || []) : [];
 
     root.innerHTML = createNavigationBanner(agencyId, 'Assistant vocal') + `
       <section class="section-block">
-        <div class="section-title">Activite assistant vocal</div>
-        ${voiceOs.connected ? '' : '<div class="meta">Donnees Voice OS indisponibles pour le moment.</div>'}
+        <div class="section-title">Performance de l'agent vocal</div>
+        ${(!retell && !voiceOs.connected) ? '<div class="meta">Données indisponibles pour le moment.</div>' : ''}
         <div class="kpis">
-          ${kpiCards.join('')}
+          ${performanceCards.join('')}
         </div>
       </section>
       <section class="section-block">
-        <div class="section-title">Dernieres activites</div>
+        <div class="section-title">Qualification commerciale</div>
+        ${voiceOs.connected ? '' : '<div class="meta">Données indisponibles pour le moment.</div>'}
+        <div class="kpis">
+          ${qualificationCards.join('')}
+        </div>
+      </section>
+      <section class="section-block">
+        <div class="section-title">Dernières activités prospects</div>
         <div class="grid">
           ${activityItems.length ? activityItems.map(item => `
             <div class="doc-card">
@@ -389,7 +414,7 @@ function renderClientData(payload, rootSelector) {
                 <div class="meta">${item.date || ''}</div>
               </div>
             </div>
-          `).join('') : '<div class="meta">Aucune activite disponible pour le moment.</div>'}
+          `).join('') : '<div class="meta">Aucune activité disponible pour le moment.</div>'}
         </div>
       </section>
     `;
