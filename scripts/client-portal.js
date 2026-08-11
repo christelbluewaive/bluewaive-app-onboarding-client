@@ -22,6 +22,59 @@ function getAgencyIdFromUrl() {
   return window.location.pathname.split('/')[2] || 'agence-inconnue';
 }
 
+// Section "Sécurité du compte" (page Votre compte). Ne journalise jamais les
+// mots de passe saisis, seulement les messages de retour utilisateur.
+function initChangePasswordForm(agencyId) {
+  const form = document.getElementById('changePasswordForm');
+  if (!form) return;
+  const messageEl = document.getElementById('passwordMessage');
+  const submitBtn = document.getElementById('changePasswordBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+
+    messageEl.textContent = '';
+    messageEl.className = 'security-message';
+
+    if (newPassword !== confirmPassword) {
+      messageEl.textContent = 'Les nouveaux mots de passe ne correspondent pas.';
+      messageEl.classList.add('error');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Modification en cours...';
+
+    try {
+      const response = await fetch(`/client/${agencyId}/api/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+      });
+      const data = await response.json();
+
+      if (response.ok && data.ok) {
+        messageEl.textContent = data.message || 'Votre mot de passe a été modifié avec succès.';
+        messageEl.classList.add('success');
+        form.reset();
+      } else {
+        messageEl.textContent = data.error || 'Une erreur est survenue.';
+        messageEl.classList.add('error');
+      }
+    } catch (error) {
+      messageEl.textContent = 'Erreur de connexion. Merci de réessayer.';
+      messageEl.classList.add('error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Modifier mon mot de passe';
+    }
+  });
+}
+
 async function loadClientData(endpoint, rootSelector) {
   const agencyId = getAgencyIdFromUrl();
   const response = await fetch(`/client/${agencyId}/api/${endpoint}`);
@@ -332,7 +385,27 @@ function renderClientData(payload, rootSelector) {
           <div class="info-field"><label>Statut</label><p><span class="status-pill active">${compte.statut}</span></p></div>
         </div>
       </section>
+      <section class="section-block">
+        <div class="section-title">Sécurité du compte</div>
+        <form id="changePasswordForm" class="security-form">
+          <div class="security-field">
+            <label for="currentPassword">Mot de passe actuel</label>
+            <input type="password" id="currentPassword" name="currentPassword" required />
+          </div>
+          <div class="security-field">
+            <label for="newPassword">Nouveau mot de passe</label>
+            <input type="password" id="newPassword" name="newPassword" minlength="8" required />
+          </div>
+          <div class="security-field">
+            <label for="confirmNewPassword">Confirmer le nouveau mot de passe</label>
+            <input type="password" id="confirmNewPassword" name="confirmNewPassword" minlength="8" required />
+          </div>
+          <div id="passwordMessage" class="security-message"></div>
+          <button type="submit" class="btn-primary" id="changePasswordBtn">Modifier mon mot de passe</button>
+        </form>
+      </section>
     `;
+    initChangePasswordForm(agencyId);
   }
 
   if (rootSelector === '#ressources-root') {

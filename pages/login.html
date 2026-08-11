@@ -98,11 +98,43 @@
       .demo-credentials strong {
         color: #1a1a1a;
       }
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #1a1a1a;
+      }
+      .checkbox-row input {
+        width: auto;
+      }
+      .checkbox-row label {
+        font-weight: 400;
+        cursor: pointer;
+      }
+      .forgot-link {
+        text-align: right;
+        font-size: 13px;
+      }
+      .forgot-link a {
+        color: #2682B4;
+      }
+      .login-logo {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 24px;
+      }
+      .login-logo img {
+        height: 40px;
+        width: auto;
+        border-radius: 8px;
+      }
     </style>
   </head>
   <body>
     <div class="login-container">
       <div class="login-card">
+        <div class="login-logo"><img src="/logo-light-bg.png" alt="Bluewaive" /></div>
         <h1>Connexion</h1>
         <p class="subtitle">Accédez à votre espace client Bluewaive</p>
 
@@ -131,13 +163,32 @@
             />
           </div>
 
+          <div class="checkbox-row">
+            <input type="checkbox" id="rememberEmail" name="rememberEmail" />
+            <label for="rememberEmail">Se souvenir de mon adresse e-mail</label>
+          </div>
+
+          <div class="forgot-link"><a href="/forgot-password">Mot de passe oublié ?</a></div>
+
           <button type="submit" id="submitBtn">Se connecter</button>
         </form>
       </div>
     </div>
 
     <script>
+      const REMEMBER_EMAIL_KEY = 'bw_remembered_email';
+
       document.addEventListener('DOMContentLoaded', () => {
+        const emailInput = document.getElementById('email');
+        const rememberCheckbox = document.getElementById('rememberEmail');
+
+        // Prefill : uniquement l'adresse e-mail, jamais le mot de passe.
+        const rememberedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
+        if (rememberedEmail) {
+          emailInput.value = rememberedEmail;
+          rememberCheckbox.checked = true;
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
           e.preventDefault();
 
@@ -160,6 +211,11 @@
             const data = await response.json();
 
             if (response.ok && data.ok) {
+              if (rememberCheckbox.checked) {
+                localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+              } else {
+                localStorage.removeItem(REMEMBER_EMAIL_KEY);
+              }
               localStorage.setItem('userEmail', email);
               window.location.href = `/client/${data.agencyId}`;
             } else {
