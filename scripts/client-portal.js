@@ -291,29 +291,47 @@ function renderClientData(payload, rootSelector) {
   }
 
   if (rootSelector === '#retell-root') {
-    const retell = payload.retellStats || {};
+    const retell = payload.retellStats || null;
+    const voiceOs = payload.voiceOsStats || { connected: false };
     const agencyId = getAgencyIdFromUrl();
+
+    const kpiCards = [];
+    if (voiceOs.connected) {
+      kpiCards.push(`<div class="kpi"><strong>${voiceOs.leadsCount}</strong><span>leads crees</span></div>`);
+      kpiCards.push(`<div class="kpi"><strong>${voiceOs.rdvCount}</strong><span>RDV pris</span></div>`);
+      kpiCards.push(`<div class="kpi"><strong>${voiceOs.profils.acheteur}</strong><span>acheteurs</span></div>`);
+      kpiCards.push(`<div class="kpi"><strong>${voiceOs.profils.vendeur}</strong><span>vendeurs</span></div>`);
+      kpiCards.push(`<div class="kpi"><strong>${voiceOs.priorites.chaud}</strong><span>leads CHAUD</span></div>`);
+      kpiCards.push(`<div class="kpi"><strong>${voiceOs.priorites.tiede}</strong><span>leads TIEDE</span></div>`);
+      kpiCards.push(`<div class="kpi"><strong>${voiceOs.relancesCount}</strong><span>relances creees</span></div>`);
+    }
+    // Nombre d'appels reels et duree moyenne : uniquement si une vraie source Retell
+    // (RETELL_API_KEY + numero) repond. Jamais de chiffre invente sinon.
+    kpiCards.push(`<div class="kpi"><strong>${retell ? retell.callCount : 'Non disponible'}</strong><span>appels</span></div>`);
+    kpiCards.push(`<div class="kpi"><strong>${retell ? retell.averageDurationMinutes : 'Non disponible'}</strong><span>minutes moyennes</span></div>`);
+    kpiCards.push(`<div class="kpi"><strong>${retell ? retell.status : 'Non disponible'}</strong><span>statut assistant</span></div>`);
+
+    const activityItems = voiceOs.connected ? (voiceOs.recentActivity || []) : [];
+
     root.innerHTML = createNavigationBanner(agencyId, 'Assistant vocal') + `
       <section class="section-block">
         <div class="section-title">Activite assistant vocal</div>
+        ${voiceOs.connected ? '' : '<div class="meta">Donnees Voice OS indisponibles pour le moment.</div>'}
         <div class="kpis">
-          <div class="kpi"><strong>${retell.callCount}</strong><span>appels</span></div>
-          <div class="kpi"><strong>${retell.averageDurationMinutes}</strong><span>minutes moyennes</span></div>
-          <div class="kpi"><strong>${retell.status}</strong><span>statut</span></div>
+          ${kpiCards.join('')}
         </div>
       </section>
       <section class="section-block">
-        <div class="section-title">Derniers appels</div>
+        <div class="section-title">Dernieres activites</div>
         <div class="grid">
-          ${(retell.lastCalls || []).map(call => `
+          ${activityItems.length ? activityItems.map(item => `
             <div class="doc-card">
               <div>
-                <strong>${call.datetime}</strong>
-                <div class="meta">Duree : ${call.durationMinutes} min</div>
+                <strong>${item.label}</strong>
+                <div class="meta">${item.date || ''}</div>
               </div>
-              <span class="status-pill ${call.status === 'Termine' ? 'active' : 'pending'}">${call.status}</span>
             </div>
-          `).join('')}
+          `).join('') : '<div class="meta">Aucune activite disponible pour le moment.</div>'}
         </div>
       </section>
     `;
