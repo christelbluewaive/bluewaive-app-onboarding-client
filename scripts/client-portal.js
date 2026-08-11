@@ -37,7 +37,7 @@ function renderClientData(payload, rootSelector) {
   if (rootSelector === '#overview-root') {
     const agency = payload.agency;
     root.innerHTML = `
-      <section class="hero-banner" style="background-image: url('/estacade-saint-jean-de-monts.jpg')">
+      <section class="hero-banner" style="background-image: url('/estacade-saint-jean-de-monts.png')">
         <div class="hero-overlay"></div>
         <div class="hero-banner-content">
           <div class="hero-badge">Bienvenue ${agency.prenom || 'client'}</div>
@@ -179,16 +179,39 @@ function renderClientData(payload, rootSelector) {
     const steps = payload.projectSteps || [];
     const completedCount = steps.filter(s => s.reached).length;
     const totalCount = steps.length;
+    const globalPercent = totalCount ? Math.round((completedCount / totalCount) * 100) : 0;
     const agencyId = getAgencyIdFromUrl();
+
+    // Statut + % par etape bases uniquement sur la donnee reelle disponible aujourd'hui :
+    // 1 case a cocher Airtable = 1 critere reel par etape (Audit fait, Config Retell
+    // faite, etc.). Pas de sous-taches granulaires stockees actuellement -> le detail
+    // "x/1 tache" reflete ce seul critere reel, jamais un pourcentage intermediaire invente.
+    // Evolution possible plus tard : plusieurs criteres reels par etape si Airtable en stocke.
+    const stepsWithStatus = steps.map(step => ({
+      ...step,
+      percent: step.reached ? 100 : 0,
+      statut: step.reached ? 'Terminé' : (step.active ? 'En cours' : 'Non commencé'),
+      tasksDone: step.reached ? 1 : 0,
+      tasksTotal: 1
+    }));
 
     root.innerHTML = createNavigationBanner(agencyId, 'Avancement du projet') + `
       <section class="section-block">
         <div class="section-title">Avancement du projet</div>
-        <div class="timeline">
-          ${steps.map(step => `
-            <div class="timeline-step ${step.reached ? 'done' : ''} ${step.active ? 'current' : ''}">
+        <div class="donut-grid">
+          ${stepsWithStatus.map(step => `
+            <div class="donut-panel donut-step-panel">
               <strong>${step.label}</strong>
-              <div class="small">${step.reached ? 'Termine' : 'A venir'}</div>
+              <div class="donut-body">
+                <div class="donut-percent-wrap">
+                  <svg id="donut-step-${step.key}" class="donut-chart" viewBox="0 0 120 120"></svg>
+                  <div class="donut-percent">${step.percent}%</div>
+                </div>
+                <div>
+                  <span class="status-pill ${step.reached ? 'active' : 'pending'}">${step.statut}</span>
+                  <div class="meta">${step.tasksDone} / ${step.tasksTotal} tâche complétée</div>
+                </div>
+              </div>
             </div>
           `).join('')}
         </div>
@@ -199,9 +222,13 @@ function renderClientData(payload, rootSelector) {
         <div class="donut-grid">
           <div class="donut-panel">
             <div class="donut-body">
-              <svg id="donut-global" class="donut-chart" viewBox="0 0 120 120"></svg>
+              <div class="donut-percent-wrap">
+                <svg id="donut-global" class="donut-chart" viewBox="0 0 120 120"></svg>
+                <div class="donut-percent">${globalPercent}%</div>
+              </div>
               <div class="donut-legend" id="legend-global"></div>
             </div>
+            <div class="meta">${completedCount} étape${completedCount > 1 ? 's' : ''} terminée${completedCount > 1 ? 's' : ''} sur ${totalCount}</div>
             <div class="donut-detail" id="detail-global"></div>
           </div>
         </div>
@@ -210,32 +237,47 @@ function renderClientData(payload, rootSelector) {
       <section class="section-block">
         <div class="section-title">Prochaines actions</div>
         <div class="grid">
-          ${(payload.nextActions || []).map((action, i) => `<div class="doc-card"><div><strong>Action ${i + 1}</strong><div class="meta">${action}</div></div></div>`).join("")}
+          ${(payload.nextActions || []).length
+            ? payload.nextActions.map((action, i) => `<div class="doc-card"><div><strong>Action ${i + 1}</strong><div class="meta">${action}</div></div></div>`).join('')
+            : '<div class="meta">Aucune prochaine action pour le moment.</div>'}
         </div>
       </section>
 
       <section class="section-block">
         <div class="section-title">Calendrier d'onboarding</div>
         <div class="grid">
-          ${(payload.calendar || []).map(event => `<div class="doc-card"><div><strong>${event.title}</strong><div class="meta">${event.date}</div></div><span class="status-pill ${event.completed ? "active" : "pending"}">${event.completed ? "Fait" : "A venir"}</span></div>`).join("")}
+          ${(payload.calendar || []).length
+            ? payload.calendar.map(event => `<div class="doc-card"><div><strong>${event.title}</strong><div class="meta">${event.date}</div></div><span class="status-pill ${event.completed ? "active" : "pending"}">${event.completed ? "Fait" : "A venir"}</span></div>`).join('')
+            : '<div class="meta">Aucun événement planifié pour le moment.</div>'}
         </div>
       </section>
     `;
 
     if (typeof renderDonut === 'function') {
-      renderDonut({
-        svgId: 'donut-global',
-        legendId: 'legend-global',
-        detailId: 'detail-global',
-        data: [
-          { key: 'completed', label: 'Complete', value: completedCount, color: '#1e8e57' },
-          { key: 'pending', label: 'En attente', value: totalCount - completedCount, color: '#e6dcc5' }
-        ],
-        detailsByKey: {
-          completed: steps.filter(s => s.reached).map(s => s.label),
-          pending: steps.filter(s => !s.reached).map(s => s.label)
-        }
+      stepsWithStatus.forEach(step => {
+        renderDonut({
+          svgId: `donut-step-${step.key}`,
+          data: [
+            { key: 'done', label: 'Fait', value: step.reached ? 1 : 0, color: '#1e8e57' },
+            { key: 'pending', label: 'A faire', value: step.reached ? 0 : 1, color: '#e6dcc5' }
+          ]
+        });
       });
+      if (totalCount > 0) {
+        renderDonut({
+          svgId: 'donut-global',
+          legendId: 'legend-global',
+          detailId: 'detail-global',
+          data: [
+            { key: 'completed', label: 'Complete', value: completedCount, color: '#1e8e57' },
+            { key: 'pending', label: 'En attente', value: totalCount - completedCount, color: '#e6dcc5' }
+          ],
+          detailsByKey: {
+            completed: steps.filter(s => s.reached).map(s => s.label),
+            pending: steps.filter(s => !s.reached).map(s => s.label)
+          }
+        });
+      }
     } else {
       console.error('renderDonut is not defined');
     }

@@ -108,6 +108,9 @@ a { color: var(--brand); text-decoration: none; }
 .donut-panel { background: linear-gradient(135deg, #ffffff 0%, #fbf7ec 100%); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
 .donut-body { display: flex; gap: 16px; align-items: center; }
 .donut-chart { width: 120px; height: 120px; min-width: 120px; }
+.donut-percent-wrap { position: relative; display: inline-flex; }
+.donut-percent { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 700; font-size: 1rem; color: var(--text); }
+.donut-step-panel strong { display: block; margin-bottom: 10px; }
 .donut-legend { display: flex; flex-direction: column; gap: 8px; }
 .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
 .legend-color { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
