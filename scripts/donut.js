@@ -16,6 +16,22 @@ function renderDonut(config) {
 
   data.forEach((item) => {
     const sliceAngle = (item.value / total) * 2 * Math.PI;
+
+    // Cas particulier : une seule tranche couvre 100% du donut (ex. etape a
+    // 0% ou 100%). Le trace en arc devient degenere (point de depart = point
+    // d'arrivee) et SVG l'omet silencieusement -> cercle invisible. On dessine
+    // alors un disque plein, seule difference visuelle avec le trace en arc.
+    if (item.value === total) {
+      const fullCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      fullCircle.setAttribute('cx', cx);
+      fullCircle.setAttribute('cy', cy);
+      fullCircle.setAttribute('r', r);
+      fullCircle.setAttribute('fill', item.color);
+      svg.appendChild(fullCircle);
+      currentAngle += sliceAngle;
+      return;
+    }
+
     const startAngle = currentAngle;
     const endAngle = currentAngle + sliceAngle;
 
