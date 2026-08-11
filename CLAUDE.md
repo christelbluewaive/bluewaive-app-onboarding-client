@@ -128,13 +128,31 @@ Client connecté (session agencyId = recordId CRM Immo)
 - Le champ Airtable Voice OS `Agence` (singleSelect, table `Leads`) reste la clé de filtre utilisée en V1 - confirmé fiable (une seule valeur, alimentée sur 100% des leads réels). Le mapping `voice_os_agency_id -> valeur Agence` vit uniquement côté code (`VOICE_OS_AGENCE_VALUE_BY_ID` dans `lib/app.js`), pour ne jamais toucher au schéma Airtable Voice OS déjà utilisé par les workflows PROD. À faire évoluer vers un vrai champ technique côté Voice OS quand une deuxième agence sera onboardée.
 - Isolation : `voice_os_agency_id` n'est **jamais** lu depuis l'URL ou un paramètre client - toujours dérivé côté serveur de la fiche Agences déjà authentifiée par la session. Les credentials Airtable Voice OS (`VOICE_OS_AIRTABLE_API_KEY`) restent côté serveur, jamais envoyés au navigateur.
 
-### KPI V1 disponibles (calculés côté serveur, filtrés par agence)
+### Isolation multi-client
+
+- **Airtable Voice OS** : isolation par `voice_os_agency_id` (résolu en valeur `Agence` côté Airtable Voice OS).
+- **Retell** : isolation par `Retell Phone Number` (utilisé comme filtre `to_number` côté API Retell).
+- **Pour tout futur vrai client** : chaque agence doit disposer de **son propre** `voice_os_agency_id` **et** de **son propre** numéro Retell (`Retell Phone Number`) pour que ses statistiques (leads/RDV/relances et appels) soient réellement isolées des autres agences. Un identifiant partagé entre deux fiches produirait des statistiques identiques pour les deux (déjà observé et documenté : `Joyce immo` et `La Plage — DEMO` partageaient initialement le même `Retell Phone Number`, corrigé depuis).
+- `La Plage — DEMO` reste une **configuration de démonstration interne**, pas un client commercial réel - à ne jamais présenter comme tel dans le portail ou les documents générés.
+
+### KPI V1 disponibles - source Airtable Voice OS (calculés côté serveur, filtrés par agence)
 
 Leads créés, RDV pris (uniquement si `Date du rendez-vous` est renseigné - jamais une simple préférence de rappel), répartition acheteurs/vendeurs, répartition CHAUD/TIÈDE/FROID, relances créées (table `Relances`, rattachées via `Record Lead ID` faute de champ Agence direct sur cette table), dernières activités (lead créé / RDV réservé / relance créée).
 
-### KPI non disponibles actuellement (ne jamais présenter comme réels)
+### KPI V1 disponibles - source API Retell (`fetchRetellStats`, uniquement si correctement configuré)
 
-Nombre d'appels réel, durée moyenne d'appel, taux appel → RDV, statut agent - aucune de ces données n'existe de façon fiable dans Airtable Voice OS aujourd'hui (c'était auparavant simulé en dur, voir historique). La page affiche "Non disponible" pour ces cartes tant qu'aucune vraie source (Retell API réelle ou évolution Voice OS) ne les alimente. `retellStats` reste utilisé **uniquement** quand `RETELL_API_KEY` + `Retell Phone Number` sont réellement configurés et répondent (données Retell réelles) - jamais de repli fictif.
+Nombre d'appels réel, durée moyenne d'appel, statut du dernier appel, derniers appels (jusqu'à 3) - **réel et validé en conditions réelles** dès que `RETELL_API_KEY` est une clé Retell valide **et** que le champ Airtable `Retell Phone Number` de l'agence contient un vrai numéro E.164 correspondant à un numéro réellement rattaché à un agent Retell. Sans l'un des deux, `retellStats` reste `null` et la page affiche "Non disponible" - jamais de repli fictif (l'ancien mock `24 appels / 3.6 min / Actif` a été supprimé, voir historique).
+
+### Champ Airtable `Retell Phone Number`
+
+- **Valeur attendue** : un numéro de téléphone au format **E.164** (ex. `+33221857500`), correspondant au numéro réellement acheté/importé dans Retell et rattaché à l'agent vocal de l'agence.
+- **Rôle exact** : utilisé côté serveur, tel quel, comme valeur du filtre `to_number` dans l'appel `POST https://api.retellai.com/v3/list-calls` (`filter_criteria: { to_number: { type: 'string', op: 'eq', value: <Retell Phone Number> } }`). Aucune transformation, aucune validation de format n'est appliquée par le code - la valeur Airtable est envoyée telle quelle à Retell.
+- **Ne doit jamais contenir** : un `agent_id` Retell, un `phone_number_id` interne, ou tout autre UUID - le filtre `to_number` de l'API Retell n'a de sens qu'avec un vrai numéro E.164.
+- **Exemple réel validé** : pour `La Plage — DEMO`, `Retell Phone Number = +33221857500` (agent Retell réel : *"Agent Vocal La Plage Immo"*) - authentification et filtrage confirmés en conditions réelles (25 appels récupérés, durée moyenne 2,4 min, statut du dernier appel `ended`).
+
+### KPI non implémentés dans le code actuel (à ne jamais documenter comme disponibles)
+
+Taux appel → RDV (aucun calcul croisé entre les appels Retell et les RDV Voice OS n'existe dans le code - les deux sources sont affichées côte à côte, jamais combinées), profil "statut de l'agent" au sens disponibilité/actif-inactif (seul le statut du dernier appel Retell, ex. `ended`, est exposé).
 
 ## Design (tokens dans `styles.css`)
 
@@ -155,7 +173,18 @@ Nombre d'appels réel, durée moyenne d'appel, taux appel → RDV, statut agent 
 ## Déploiement
 
 - Vercel : `vercel.json` route tout le trafic vers `api/index.js` (qui `require('../lib/app')`)
-- Variables d'env à configurer côté Vercel : `AIRTABLE_BASE_ID`, `AIRTABLE_API_KEY`, `RETELL_API_KEY`, `SESSION_SECRET`
+- Variables d'env à configurer côté Vercel (jamais commit, valeurs à saisir manuellement dans les paramètres du projet Vercel) :
+
+| Variable | Obligatoire | Rôle |
+|---|---|---|
+| `SESSION_SECRET` | OUI | Signature HMAC des sessions - sans elle, aucune connexion possible |
+| `AIRTABLE_API_KEY` | OUI | Accès Airtable CRM Immo (Agences/Devis/Factures/Contrats/Offres) |
+| `AIRTABLE_BASE_ID` | Non (défaut en dur dans le code) | Base CRM Immo si différente de la valeur par défaut |
+| `RETELL_API_KEY` | Non (portail fonctionne sans, KPI Retell juste indisponibles) | Authentification API Retell pour les KPI d'appels réels |
+| `VOICE_OS_AIRTABLE_API_KEY` | Non (portail fonctionne sans, KPI Voice OS juste indisponibles) | Accès Airtable Voice OS (leads/RDV/relances) |
+| `VOICE_OS_AIRTABLE_BASE_ID` | Non (défaut en dur dans le code) | Base Voice OS si différente de la valeur par défaut |
+| `VOICE_OS_AIRTABLE_TABLE_LEADS` | Non (défaut `Leads`) | Nom de la table Leads si renommée |
+| `VOICE_OS_AIRTABLE_TABLE_RELANCES` | Non (défaut `Relances`) | Nom de la table Relances si renommée |
 
 ## Historique récent (contexte utile)
 
@@ -164,6 +193,7 @@ Nombre d'appels réel, durée moyenne d'appel, taux appel → RDV, statut agent 
 - Le projet partageait son dossier avec du contenu totalement hors-sujet (landing page marketing bluewaive.fr, docs CRM, scripts vidéo, template pédagogique "IAPreneurs") → tout déplacé dans `_archive/`, structure actuelle nettoyée
 - L'image `estacade-saint-jean-de-monts.jpg` de la bannière d'accueil (`#overview-root`, référencée dans `scripts/client-portal.js`) avait disparu lors de ce nettoyage : elle avait été déplacée par erreur dans `_archive/marketing-landing-bluewaive.fr/` alors qu'elle est réellement utilisée par le portail actif. Restaurée dans `public/estacade-saint-jean-de-monts.jpg` (copie de l'asset existant, fichier inchangé) - `_archive/` conserve sa copie historique. Point de vigilance mineur, non lié au portail : le fichier est en réalité un PNG malgré son extension `.jpg` (préexistant, hérité tel quel).
 - KPI Voice OS V1 (leads/RDV/relances) branchés sur la page Assistant vocal, remplaçant les faux "24 appels / 3.6 min / Actif" - voir section dédiée ci-dessus
+- KPI Retell V1 (nombre d'appels, durée moyenne, statut, derniers appels) validés en conditions réelles pour `La Plage — DEMO` (`Retell Phone Number = +33221857500`) - aucune modification de code nécessaire, l'implémentation existante de `fetchRetellStats` fonctionnait déjà correctement une fois `RETELL_API_KEY` et le numéro E.164 correctement configurés
 
 ## `_archive/` - ne pas confondre avec le projet
 
