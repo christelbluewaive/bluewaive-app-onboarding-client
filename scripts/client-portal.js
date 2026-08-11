@@ -19,7 +19,7 @@ function createNavigationBanner(agencyId, title) {
 }
 
 function getAgencyIdFromUrl() {
-  return window.location.pathname.split('/')[2] || 'rec9eVu9T7XNrlIAf';
+  return window.location.pathname.split('/')[2] || 'agence-inconnue';
 }
 
 async function loadClientData(endpoint, rootSelector) {
