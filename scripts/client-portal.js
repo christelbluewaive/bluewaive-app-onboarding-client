@@ -10,6 +10,17 @@ function escapeHtml(value) {
   }[char]));
 }
 
+// Icones SVG inline (trait, 24x24, currentColor) pour les cartes "Acces rapides" -
+// aucune dependance externe, style coherent avec la fleche deja utilisee dans
+// createNavigationBanner (stroke-width 2, linecap/linejoin round).
+const ICON_DEVIS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>';
+const ICON_FACTURES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6"/><path d="M9 12h6"/></svg>';
+const ICON_CONTRAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>';
+const ICON_AVANCEMENT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-4 4"/></svg>';
+const ICON_RESSOURCES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+const ICON_AGENT_VOCAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
+const ICON_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+
 function statusClass(statut) {
   const value = (statut || '').toLowerCase();
   if (['accepté', 'accepte', 'payée', 'payee', 'signé', 'signe', 'actif'].some(s => value.includes(s))) return 'active';
@@ -146,12 +157,36 @@ function renderClientData(payload, rootSelector) {
       <section class="section-block">
         <div class="section-title">Acces rapides</div>
         <div class="grid grid-2">
-          <a class="tile" href="/client/${agency.id}/devis"><h3>Devis</h3><p>Consultez votre offre et le statut de votre proposition.</p></a>
-          <a class="tile" href="/client/${agency.id}/factures"><h3>Factures</h3><p>Retrouvez vos factures emises et leurs echeances.</p></a>
-          <a class="tile" href="/client/${agency.id}/contrat"><h3>Contrat</h3><p>Accedez a la version signee et aux dates cles.</p></a>
-          <a class="tile" href="/client/${agency.id}/projet"><h3>Avancement du projet</h3><p>Suivez les etapes de votre onboarding.</p></a>
-          <a class="tile" href="/client/${agency.id}/ressources"><h3>Ressources et documentation</h3><p>Accedez aux guides et materiels de formation.</p></a>
-          <a class="tile" href="/client/${agency.id}/retell"><h3>Assistant vocal</h3><p>Consultez l'activite de votre assistant Retell.</p></a>
+          <a class="tile" href="/client/${agency.id}/devis">
+            <span class="tile-icon">${ICON_DEVIS}</span>
+            <span class="tile-body"><h3>Devis</h3><p>Consultez votre offre et son statut.</p></span>
+            <span class="tile-chevron">${ICON_CHEVRON}</span>
+          </a>
+          <a class="tile" href="/client/${agency.id}/factures">
+            <span class="tile-icon">${ICON_FACTURES}</span>
+            <span class="tile-body"><h3>Factures</h3><p>Retrouvez vos factures et leurs echeances.</p></span>
+            <span class="tile-chevron">${ICON_CHEVRON}</span>
+          </a>
+          <a class="tile" href="/client/${agency.id}/contrat">
+            <span class="tile-icon">${ICON_CONTRAT}</span>
+            <span class="tile-body"><h3>Contrat</h3><p>Consultez votre contrat signe et les dates cles.</p></span>
+            <span class="tile-chevron">${ICON_CHEVRON}</span>
+          </a>
+          <a class="tile tile-accent" href="/client/${agency.id}/projet">
+            <span class="tile-icon">${ICON_AVANCEMENT}</span>
+            <span class="tile-body"><h3>Avancement</h3><p>Suivez les etapes de votre onboarding.</p></span>
+            <span class="tile-chevron">${ICON_CHEVRON}</span>
+          </a>
+          <a class="tile" href="/client/${agency.id}/ressources">
+            <span class="tile-icon">${ICON_RESSOURCES}</span>
+            <span class="tile-body"><h3>Ressources</h3><p>Accedez aux guides et supports utiles.</p></span>
+            <span class="tile-chevron">${ICON_CHEVRON}</span>
+          </a>
+          <a class="tile tile-accent" href="/client/${agency.id}/retell">
+            <span class="tile-icon">${ICON_AGENT_VOCAL}</span>
+            <span class="tile-body"><h3>Agent vocal</h3><p>Consultez l'activite de votre agent vocal.</p></span>
+            <span class="tile-chevron">${ICON_CHEVRON}</span>
+          </a>
         </div>
       </section>
     `;

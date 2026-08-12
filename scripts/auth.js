@@ -11,17 +11,11 @@ async function logout() {
 function initLogoutButton() {
   const topbarActions = document.querySelector('.topbar-actions');
   if (topbarActions) {
+    // Style entierement dans styles.css (classe .logout-btn) - coherent avec le
+    // reste des actions du bandeau, pas d'inline style ici.
     const logoutBtn = document.createElement('button');
     logoutBtn.className = 'logout-btn';
     logoutBtn.textContent = 'Déconnexion';
-    logoutBtn.style.cursor = 'pointer';
-    logoutBtn.style.background = '#e74c3c';
-    logoutBtn.style.color = 'white';
-    logoutBtn.style.border = 'none';
-    logoutBtn.style.padding = '8px 16px';
-    logoutBtn.style.borderRadius = '6px';
-    logoutBtn.style.fontSize = '14px';
-    logoutBtn.style.marginLeft = '12px';
     logoutBtn.onclick = logout;
 
     topbarActions.appendChild(logoutBtn);

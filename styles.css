@@ -24,15 +24,37 @@ body {
 a { color: var(--brand); text-decoration: none; }
 .page-shell { max-width: 1120px; margin: 0 auto; padding: 32px 20px 60px; }
 .topbar {
-  position: relative; display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px;
-  background: linear-gradient(135deg, #ffffff 0%, #faf6ec 100%); border: 1px solid var(--line); border-radius: 24px; padding: 20px 24px; box-shadow: var(--shadow);
+  position: relative; display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px;
+  background: linear-gradient(135deg, #ffffff 0%, #faf6ec 100%); border: 1px solid var(--line); border-radius: 24px; padding: 18px 28px; box-shadow: var(--shadow);
 }
-.topbar .brand { display: flex; align-items: center; gap: 14px; }
-.brand-title { position: absolute; left: 50%; transform: translateX(-50%); margin: 0; font-size: 24px; font-weight: 700; color: #2682B4; white-space: nowrap; }
-.topbar-actions { display: flex; align-items: center; gap: 12px; }
-.nav-link { color: #2682B4; font-weight: 600; font-size: 14px; text-decoration: none; padding: 8px 12px; border-radius: 6px; transition: background 0.2s; }
-.nav-link:hover { background: #f0f0f0; }
-.brand-logo { height: 36px; width: auto; display: block; border-radius: 10px; }
+.topbar .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.brand-title {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0;
+  font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: #2682B4; white-space: nowrap;
+}
+.topbar-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.nav-link {
+  display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-weight: 600; font-size: 14px;
+  text-decoration: none; padding: 8px 12px; border-radius: 999px; transition: background 0.2s ease, color 0.2s ease;
+}
+.nav-link:hover { background: var(--brand-soft); color: var(--brand-dark); }
+/* Icone utilisateur discrete devant "Votre compte" uniquement (id fixe present sur
+   toutes les pages) - mask SVG inline en currentColor, aucun asset ni dependance. */
+#compte-link::before {
+  content: ''; width: 15px; height: 15px; flex-shrink: 0; background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21a8 8 0 0 0-16 0'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21a8 8 0 0 0-16 0'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* Deconnexion (bouton injecte par scripts/auth.js, classe .logout-btn) : action
+   secondaire mais immediatement reconnaissable - contour rouge discret plutot qu'un
+   bouton plein, coherent avec le reste des actions du bandeau. */
+.logout-btn {
+  display: inline-flex; align-items: center; font-family: inherit; font-weight: 600; font-size: 14px;
+  color: var(--danger); background: #fff; border: 1px solid #f0c4c4; border-radius: 999px; padding: 8px 14px;
+  cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease;
+}
+.logout-btn:hover { background: #fff5f5; border-color: var(--danger); }
+.brand-logo { height: 42px; width: auto; display: block; border-radius: 10px; flex-shrink: 0; }
 .topbar .brand strong { font-size: 1.05rem; display: block; }
 .topbar .brand .muted { font-size: 0.95rem; }
 .topbar .pill { background: var(--brand-soft); color: var(--brand); border-radius: 999px; padding: 8px 12px; font-size: 0.9rem; font-weight: 600; }
@@ -42,14 +64,22 @@ a { color: var(--brand); text-decoration: none; }
    header passe en 2 lignes (logo+titre, puis navigation), le titre revient dans le flux
    normal - plus de superposition possible, aucun debordement horizontal. */
 @media (max-width: 640px) {
-  .topbar { flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; }
+  .topbar { flex-direction: column; align-items: stretch; gap: 16px; padding: 18px 20px; }
   .topbar .brand { justify-content: center; }
   .brand-title { position: static; transform: none; text-align: center; font-size: 18px; }
-  .brand-logo { height: 28px; }
-  .topbar-actions { justify-content: center; flex-wrap: wrap; gap: 8px; }
-  /* Le bouton Deconnexion (scripts/auth.js) porte une marge inline ; neutralisee ici
-     pour un espacement homogene avec les autres liens sur la ligne mobile. */
-  .topbar-actions .logout-btn { margin-left: 0 !important; }
+  .brand-logo { height: 38px; }
+  .topbar-actions { justify-content: center; flex-wrap: wrap; gap: 10px; row-gap: 10px; }
+}
+/* Palier supplementaire pour les tres petits ecrans (320-374px) : on resserre encore
+   avant de sacrifier la lisibilite - padding, logo, typo et gaps reduits ensemble. */
+@media (max-width: 374px) {
+  .topbar { padding: 14px 16px; gap: 12px; }
+  .brand-logo { height: 31px; }
+  .brand-title { font-size: 16px; }
+  .nav-link, .logout-btn { font-size: 12.5px; padding: 6px 8px; }
+  #compte-link { gap: 5px; }
+  #compte-link::before { width: 12px; height: 12px; }
+  .topbar-actions { gap: 6px; row-gap: 8px; }
 }
 .hero-banner {
   position: relative; width: 100%; height: 240px; background-size: cover; background-position: center; margin-bottom: 32px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 24px;
@@ -88,10 +118,28 @@ a { color: var(--brand); text-decoration: none; }
 .grid { display: grid; gap: 16px; }
 .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.tile { background: linear-gradient(135deg, #faf6ec, #f3ecd9); border: 1px solid var(--line); border-radius: 16px; padding: 16px; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.tile:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(40, 30, 10, 0.06); }
-.tile h3 { margin: 0 0 8px; font-size: 1rem; }
-.tile p { margin: 0 0 10px; color: var(--muted); font-size: 0.95rem; }
+.tile {
+  display: flex; align-items: center; gap: 14px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 16px; padding: 14px 16px; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.tile:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(40, 30, 10, 0.06); border-color: #d9cca4; }
+.tile-icon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 40px; height: 40px;
+  border-radius: 12px; background: var(--brand-soft); color: var(--brand-dark);
+}
+.tile-icon svg { width: 20px; height: 20px; }
+/* Avancement et Agent vocal : legerement mis en avant via une puce d'icone pleine,
+   meme systeme visuel que les autres tuiles (pas de design distinct). */
+.tile-accent .tile-icon { background: var(--brand); color: #fff; }
+.tile-body { flex: 1 1 auto; min-width: 0; }
+.tile-body h3 { margin: 0 0 3px; font-size: 0.98rem; }
+.tile-body p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
+.tile-chevron {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--muted);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.tile-chevron svg { width: 18px; height: 18px; }
+.tile:hover .tile-chevron { transform: translateX(3px); color: var(--brand); }
 .doc-card {
   display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(135deg, #ffffff 0%, #fbf7ec 100%); box-shadow: 0 6px 18px rgba(40, 30, 10, 0.04);
 }
