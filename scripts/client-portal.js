@@ -1,3 +1,15 @@
+// Echappement minimal pour toute valeur Airtable inseree dans un template innerHTML.
+// Utilise pour les nouveaux champs texte libre (ex. Agent Vocal) affiches dynamiquement.
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
+}
+
 function statusClass(statut) {
   const value = (statut || '').toLowerCase();
   if (['accepté', 'accepte', 'payée', 'payee', 'signé', 'signe', 'actif'].some(s => value.includes(s))) return 'active';
@@ -96,7 +108,6 @@ function renderClientData(payload, rootSelector) {
         <div class="hero-banner-content">
           <div class="hero-badge">Bienvenue ${agency.prenom || 'client'}</div>
           <p>Votre onboarding est deja en cours. Retrouvez ici vos documents, votre contrat et l'avancee de votre mise en place.</p>
-          <span class="status-pill ${statusClass(agency.statutCommercial)}">${agency.statutCommercial}</span>
         </div>
       </section>
       <section class="section-block">
@@ -106,7 +117,7 @@ function renderClientData(payload, rootSelector) {
             ? `<img src="${agency.logoUrl}" alt="Logo ${agency.nomAgence || 'agence'}" class="agency-logo">`
             : `<div class="contact-avatar">${agencyInitial}</div>`}
           <div>
-            <h3>Emma</h3>
+            <h3>${agency.agentVocal ? escapeHtml(agency.agentVocal) : 'Assistante vocale'}</h3>
             <p>Assistante vocale de ${agency.nomAgence || 'votre agence'}</p>
           </div>
         </div>
