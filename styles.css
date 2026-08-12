@@ -165,6 +165,20 @@ a { color: var(--brand); text-decoration: none; }
 }
 .webcall-status.error { color: var(--danger); }
 @keyframes webcall-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+/* Controle "Activer le son" : n'apparait que si la lecture audio du Web Call est
+   bloquee par le navigateur mobile (autoplay). Discret par design - petite pastille
+   texte, jamais aussi visible que le bouton d'appel principal - masque des que le son
+   demarre. Ne modifie rien au design deja valide du bouton/icone Web Call. */
+.webcall-unmute-btn {
+  display: inline-flex; align-items: center; border: 1px solid rgba(38, 130, 180, 0.4);
+  background: rgba(38, 130, 180, 0.08); color: var(--brand); font-family: inherit;
+  font-weight: 600; font-size: 0.85rem; padding: 7px 14px; border-radius: 999px;
+  cursor: pointer; transition: background 0.15s ease, transform 0.15s ease;
+}
+.webcall-unmute-btn:hover { background: rgba(38, 130, 180, 0.15); }
+.webcall-unmute-btn:active { transform: scale(0.96); }
+.webcall-unmute-btn:focus-visible { outline: 2px solid rgba(38, 130, 180, 0.5); outline-offset: 2px; }
+.webcall-unmute-btn[hidden] { display: none; }
 @media (max-width: 480px) {
   .webcall-widget { flex-direction: column; align-items: center; gap: 12px; }
   .webcall-btn-icon-img { width: 86px; }

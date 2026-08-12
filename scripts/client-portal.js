@@ -137,6 +137,7 @@ function renderClientData(payload, rootSelector) {
             <img src="/icone-web-call.png" alt="" class="webcall-btn-icon-img">
           </button>
           <div class="webcall-status" id="webcall-status" aria-live="polite"></div>
+          <button type="button" class="webcall-unmute-btn" id="webcall-unmute-btn" hidden>Activer le son</button>
         </div>
       </section>
       <section class="section-block">
@@ -643,6 +644,7 @@ function initWebCallWidget(agencyId, agentName) {
   if (!widget) return;
   const button = widget.querySelector('#webcall-btn');
   const statusEl = widget.querySelector('#webcall-status');
+  const unmuteBtn = widget.querySelector('#webcall-unmute-btn');
   // Bouton icone seule (pas de texte visible) : le nom de l'action vit uniquement dans
   // l'aria-label, mis a jour a chaque changement d'etat pour rester correct au clavier/lecteur
   // d'ecran (le contexte "qui" est deja donne visuellement par la carte au-dessus du bouton).
@@ -668,8 +670,55 @@ function initWebCallWidget(agencyId, agentName) {
     statusEl.className = 'webcall-status' + (tone ? ` ${tone}` : '');
   }
 
+  // Contrôle "Activer le son" : masqué par défaut, affiché uniquement si la lecture
+  // audio du Web Call échoue à démarrer automatiquement (politique autoplay du
+  // navigateur mobile). `isRetryFailure` distingue le tout premier blocage (texte neutre
+  // "Activer le son") d'un nouvel échec après un clic explicite (texte "Réessayer le
+  // son") - l'appel reste actif dans les deux cas, jamais recréé.
+  function showUnmuteControl(isRetryFailure) {
+    unmuteBtn.hidden = false;
+    unmuteBtn.textContent = isRetryFailure ? 'Réessayer le son' : 'Activer le son';
+    if (state === 'active') {
+      setStatus(isRetryFailure ? "Le son n'a pas pu démarrer. Réessayez." : 'Son bloqué — appuyez sur « Activer le son »', 'error');
+    }
+  }
+
+  function hideUnmuteControl() {
+    unmuteBtn.hidden = true;
+    unmuteBtn.textContent = 'Activer le son';
+  }
+
+  // Tente de démarrer/reprendre la lecture audio du Web Call. Appelée une première fois
+  // automatiquement a `call_started` (peut échouer sur mobile si le navigateur bloque la
+  // lecture hors d'un geste utilisateur direct - plusieurs étapes async la séparent du
+  // clic initial), puis à nouveau au clic sur "Activer le son"/"Réessayer le son" (ce
+  // clic est lui-même un geste utilisateur direct, ce qui débloque la lecture). Ne
+  // recrée jamais d'appel : uniquement (re)lance la lecture audio de l'appel en cours.
+  function attemptAudioPlayback(isRetry) {
+    if (!retellWebClientInstance || typeof retellWebClientInstance.startAudioPlayback !== 'function') {
+      return;
+    }
+    let playbackResult;
+    try {
+      playbackResult = retellWebClientInstance.startAudioPlayback();
+    } catch (syncAudioError) {
+      // Jamais l'accessToken ni aucune donnee sensible - uniquement le type d'erreur.
+      console.warn('Web Call audio: startAudioPlayback a échoué (synchrone)', syncAudioError && syncAudioError.name ? syncAudioError.name : 'unknown');
+      showUnmuteControl(Boolean(isRetry));
+      return;
+    }
+    Promise.resolve(playbackResult).then(() => {
+      hideUnmuteControl();
+      if (state === 'active') setStatus('Appel en cours', 'active');
+    }).catch((audioError) => {
+      console.warn('Web Call audio: lecture bloquée', audioError && audioError.name ? audioError.name : 'unknown');
+      showUnmuteControl(Boolean(isRetry));
+    });
+  }
+
   function setIdle() {
     clearEndedStatusTimer();
+    hideUnmuteControl();
     state = 'idle';
     button.disabled = false;
     button.setAttribute('aria-label', readyLabel);
@@ -679,6 +728,7 @@ function initWebCallWidget(agencyId, agentName) {
 
   function setConnecting() {
     clearEndedStatusTimer();
+    hideUnmuteControl();
     state = 'connecting';
     button.disabled = true;
     button.setAttribute('aria-label', connectingLabel);
@@ -689,6 +739,7 @@ function initWebCallWidget(agencyId, agentName) {
 
   function setActive() {
     clearEndedStatusTimer();
+    hideUnmuteControl();
     state = 'active';
     button.disabled = false;
     button.setAttribute('aria-label', hangupLabel);
@@ -699,6 +750,7 @@ function initWebCallWidget(agencyId, agentName) {
 
   function setEnded() {
     clearEndedStatusTimer();
+    hideUnmuteControl();
     state = 'ended';
     button.disabled = false;
     button.setAttribute('aria-label', readyLabel);
@@ -714,6 +766,7 @@ function initWebCallWidget(agencyId, agentName) {
 
   function setError(message) {
     clearEndedStatusTimer();
+    hideUnmuteControl();
     state = 'error';
     button.disabled = false;
     button.setAttribute('aria-label', readyLabel);
@@ -772,7 +825,7 @@ function initWebCallWidget(agencyId, agentName) {
       retellWebClientInstance = new RetellWebClient();
       retellWebClientInstance.on('call_started', () => {
         setActive();
-        retellWebClientInstance.startAudioPlayback().catch(() => {});
+        attemptAudioPlayback(false);
       });
       retellWebClientInstance.on('call_ended', () => {
         setEnded();
@@ -803,6 +856,16 @@ function initWebCallWidget(agencyId, agentName) {
     }
     if (state === 'connecting') return; // deja en cours, ignore le double-clic
     startFlow();
+  });
+
+  // Geste utilisateur direct requis par les navigateurs mobiles (Safari/iOS en
+  // particulier) pour autoriser la lecture audio : ce clic seul (contrairement a la
+  // tentative automatique post-connexion, elle-meme trop eloignee du clic initial sur le
+  // bouton d'appel) suffit a debloquer la lecture. Ne recree jamais d'appel, ne relance
+  // que la lecture audio de l'appel deja en cours.
+  unmuteBtn.addEventListener('click', () => {
+    if (state !== 'active') return;
+    attemptAudioPlayback(true);
   });
 
   setIdle();
