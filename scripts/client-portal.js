@@ -129,8 +129,14 @@ function renderClientData(payload, rootSelector) {
             : `<div class="contact-avatar">${agencyInitial}</div>`}
           <div>
             <h3>${agency.agentVocal ? escapeHtml(agency.agentVocal) : 'Assistante vocale'}</h3>
-            <p>Assistante vocale de ${agency.nomAgence || 'votre agence'}</p>
+            <p>Assistante vocale de ${agency.nomAgencePublic || agency.nomAgence || 'votre agence'}</p>
           </div>
+        </div>
+        <div class="webcall-widget" id="webcall-widget">
+          <button type="button" class="webcall-btn" id="webcall-btn" aria-label="${escapeHtml(agency.agentVocal ? `Parler avec ${agency.agentVocal}` : "Parler avec l'assistant vocal")}">
+            <img src="/icone-web-call.png" alt="" class="webcall-btn-icon-img">
+          </button>
+          <div class="webcall-status" id="webcall-status" aria-live="polite"></div>
         </div>
       </section>
       <section class="section-block">
@@ -190,6 +196,7 @@ function renderClientData(payload, rootSelector) {
         </div>
       </section>
     `;
+    initWebCallWidget(agency.id, agency.agentVocal || '');
     return;
   }
 
@@ -602,6 +609,203 @@ function renderClientData(payload, rootSelector) {
     `;
     return;
   }
+}
+
+// ---- Web Call Retell (bouton "Parler avec [Agent Vocal]", carte "Votre assistante vocale") ----
+// SDK charge en lazy (uniquement au premier clic, jamais au chargement de la page) depuis
+// un CDN ESM (esm.sh), version figee. Ce SDK (retell-client-js-sdk) depend de
+// livekit-client et son build UMD utilise require(...) - incompatible avec une simple
+// balise <script> sans bundler (ce portail n'en a pas). import() dynamique fonctionne en
+// script classique (pas besoin de type="module") dans tous les navigateurs modernes.
+// Aucune cle Retell ni agent_id ici : seul un accessToken de courte duree (recu du
+// serveur via /api/create-web-call) est utilise, gardé en mémoire locale uniquement -
+// jamais stocke (localStorage/sessionStorage), jamais loggue, jamais affiche.
+const RETELL_WEB_SDK_URL = 'https://esm.sh/retell-client-js-sdk@2.0.8';
+let retellWebClientInstance = null;
+let retellWebClientClassPromise = null;
+
+function loadRetellWebClientClass() {
+  if (!retellWebClientClassPromise) {
+    retellWebClientClassPromise = import(RETELL_WEB_SDK_URL).then((mod) => {
+      if (!mod || typeof mod.RetellWebClient !== 'function') {
+        throw new Error('RetellWebClient introuvable dans le module charge');
+      }
+      return mod.RetellWebClient;
+    });
+  }
+  return retellWebClientClassPromise;
+}
+
+// `agentName` est affiche uniquement via textContent (jamais reinjecte en innerHTML) -
+// aucun echappement HTML necessaire ici, contrairement au rendu initial du bouton.
+function initWebCallWidget(agencyId, agentName) {
+  const widget = document.querySelector('#webcall-widget');
+  if (!widget) return;
+  const button = widget.querySelector('#webcall-btn');
+  const statusEl = widget.querySelector('#webcall-status');
+  // Bouton icone seule (pas de texte visible) : le nom de l'action vit uniquement dans
+  // l'aria-label, mis a jour a chaque changement d'etat pour rester correct au clavier/lecteur
+  // d'ecran (le contexte "qui" est deja donne visuellement par la carte au-dessus du bouton).
+  const readyLabel = agentName ? `Parler avec ${agentName}` : "Parler avec l'assistant vocal";
+  const connectingLabel = 'Connexion en cours';
+  const hangupLabel = agentName ? `Raccrocher l'appel avec ${agentName}` : "Raccrocher l'appel";
+
+  let state = 'idle'; // idle | connecting | active | ended | error
+  // Efface automatiquement la confirmation "Appel terminé." apres un court delai pour
+  // revenir a l'etat initial propre (le libelle du bouton, lui, revient deja immediatement
+  // a `readyLabel` dans setEnded ci-dessous - seul le texte de statut a cote persistait).
+  let endedStatusTimer = null;
+
+  function clearEndedStatusTimer() {
+    if (endedStatusTimer) {
+      clearTimeout(endedStatusTimer);
+      endedStatusTimer = null;
+    }
+  }
+
+  function setStatus(text, tone) {
+    statusEl.textContent = text || '';
+    statusEl.className = 'webcall-status' + (tone ? ` ${tone}` : '');
+  }
+
+  function setIdle() {
+    clearEndedStatusTimer();
+    state = 'idle';
+    button.disabled = false;
+    button.setAttribute('aria-label', readyLabel);
+    button.classList.remove('webcall-btn-hangup', 'webcall-btn-connecting');
+    setStatus('', '');
+  }
+
+  function setConnecting() {
+    clearEndedStatusTimer();
+    state = 'connecting';
+    button.disabled = true;
+    button.setAttribute('aria-label', connectingLabel);
+    button.classList.remove('webcall-btn-hangup');
+    button.classList.add('webcall-btn-connecting');
+    setStatus('', '');
+  }
+
+  function setActive() {
+    clearEndedStatusTimer();
+    state = 'active';
+    button.disabled = false;
+    button.setAttribute('aria-label', hangupLabel);
+    button.classList.remove('webcall-btn-connecting');
+    button.classList.add('webcall-btn-hangup');
+    setStatus('Appel en cours', 'active');
+  }
+
+  function setEnded() {
+    clearEndedStatusTimer();
+    state = 'ended';
+    button.disabled = false;
+    button.setAttribute('aria-label', readyLabel);
+    button.classList.remove('webcall-btn-hangup', 'webcall-btn-connecting');
+    setStatus('Appel terminé.', 'ended');
+    // Confirmation transitoire uniquement : revient a l'etat idle (bouton + statut vides)
+    // une fois affichee, sans rester figee indefiniment a cote du bouton.
+    endedStatusTimer = setTimeout(() => {
+      endedStatusTimer = null;
+      if (state === 'ended') setIdle();
+    }, 4000);
+  }
+
+  function setError(message) {
+    clearEndedStatusTimer();
+    state = 'error';
+    button.disabled = false;
+    button.setAttribute('aria-label', readyLabel);
+    button.classList.remove('webcall-btn-hangup', 'webcall-btn-connecting');
+    setStatus(message, 'error');
+  }
+
+  async function startFlow() {
+    setConnecting();
+
+    let response;
+    try {
+      response = await fetch(`/client/${agencyId}/api/create-web-call`, { method: 'POST' });
+    } catch (networkError) {
+      setError('Erreur réseau. Vérifiez votre connexion et réessayez.');
+      return;
+    }
+
+    let data = {};
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      data = {};
+    }
+
+    if (!response.ok || typeof data.accessToken !== 'string' || !data.accessToken) {
+      // Les messages renvoyes par le serveur sont deja neutres et destines a l'affichage
+      // client (409 champ manquant, 429 rate-limit, 502 echec Retell, 401 session).
+      setError(data.error || "Impossible de démarrer l'appel test pour le moment. Merci de réessayer.");
+      return;
+    }
+
+    const accessToken = data.accessToken; // memoire locale uniquement, jamais loggue
+
+    // Verification micro AVANT de demarrer l'appel Retell, pour distinguer clairement un
+    // refus/absence de micro d'une erreur reseau ou d'un echec Retell. Simple sonde de
+    // permission : les pistes obtenues sont immediatement arretees, le flux Web Call gere
+    // sa propre capture audio ensuite.
+    try {
+      const probeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      probeStream.getTracks().forEach((track) => track.stop());
+    } catch (micError) {
+      setError("Microphone refusé ou indisponible. Autorisez l'accès au micro pour tester l'assistant vocal.");
+      return;
+    }
+
+    let RetellWebClient;
+    try {
+      RetellWebClient = await loadRetellWebClientClass();
+    } catch (sdkError) {
+      setError("Le service d'appel vocal est momentanément indisponible. Merci de réessayer plus tard.");
+      return;
+    }
+
+    if (!retellWebClientInstance) {
+      retellWebClientInstance = new RetellWebClient();
+      retellWebClientInstance.on('call_started', () => {
+        setActive();
+        retellWebClientInstance.startAudioPlayback().catch(() => {});
+      });
+      retellWebClientInstance.on('call_ended', () => {
+        setEnded();
+      });
+      retellWebClientInstance.on('error', () => {
+        setError('La connexion à l\'assistant vocal a été interrompue. Merci de réessayer.');
+        try { retellWebClientInstance.stopCall(); } catch (stopError) { /* deja arrete */ }
+      });
+    }
+
+    try {
+      await retellWebClientInstance.startCall({ accessToken });
+    } catch (startError) {
+      setError("Impossible de démarrer l'appel. Merci de réessayer.");
+    }
+  }
+
+  function stopFlow() {
+    if (retellWebClientInstance) {
+      try { retellWebClientInstance.stopCall(); } catch (stopError) { /* deja arrete */ }
+    }
+  }
+
+  button.addEventListener('click', () => {
+    if (state === 'active') {
+      stopFlow();
+      return;
+    }
+    if (state === 'connecting') return; // deja en cours, ignore le double-clic
+    startFlow();
+  });
+
+  setIdle();
 }
 
 // Rend cliquables les cartes de "Dernières activités prospects" qui portent un jeton

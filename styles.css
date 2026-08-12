@@ -112,6 +112,63 @@ a { color: var(--brand); text-decoration: none; }
 .contact-card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
 .contact-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .contact-actions a { display: inline-flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 999px; background: var(--brand-soft); font-weight: 600; }
+
+/* Widget "Parler avec [Agent Vocal]" (Web Call Retell, carte Votre assistante vocale).
+   Icone dediee : /icone-web-call.png (copie telle quelle depuis
+   bluewaive-voice-os/90-assets/web-call/icone-web-call.png, PNG RGBA transparent,
+   jamais retouchee - seule la taille d'affichage est adaptee ici).
+   Bouton icone seule (pas de texte visible dans le bouton, aucun fond/cercle/bordure) :
+   l'icone flotte directement sur la carte (fond blanc du panneau, contraste naturel avec
+   le bleu de l'icone - pas besoin de support). Le nom de l'action vit dans l'aria-label
+   (mis a jour par etat cote JS), le "qui" est deja donne par la carte au-dessus. */
+.webcall-widget { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 8px; }
+.webcall-btn {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  padding: 10px; border: none; background: none; box-shadow: none; cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.webcall-btn:hover:not(:disabled) { transform: scale(1.04); }
+.webcall-btn:active:not(:disabled) { transform: scale(0.95); }
+.webcall-btn:focus-visible { outline: 2px solid rgba(38, 130, 180, 0.5); outline-offset: 4px; border-radius: 8px; }
+.webcall-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+/* object-fit: contain preserve le ratio natif du PNG (677x369) - jamais de stretch/skew.
+   100px desktop / 86px mobile : taille genereuse, coherente avec l'ancien bouton pilule.
+   Le halo est un drop-shadow (pas un box-shadow) : il epouse la silhouette transparente
+   de l'icone (combine + ondes), jamais un cercle/contour rectangulaire ou circulaire. */
+.webcall-btn-icon-img {
+  width: 100px; height: auto; object-fit: contain; display: block;
+  filter: drop-shadow(0 0 8px rgba(38, 130, 180, 0.35)) drop-shadow(0 0 18px rgba(38, 130, 180, 0.2));
+  transition: filter 0.2s ease, transform 0.25s ease;
+}
+.webcall-btn:hover:not(:disabled) .webcall-btn-icon-img,
+.webcall-btn:focus-visible .webcall-btn-icon-img {
+  filter: drop-shadow(0 0 11px rgba(38, 130, 180, 0.5)) drop-shadow(0 0 24px rgba(38, 130, 180, 0.3));
+}
+/* Connexion : icone qui pulse, bouton desactive (etat visuel distinct de idle/actif). */
+.webcall-btn-connecting .webcall-btn-icon-img { animation: webcall-icon-pulse 1.1s ease-in-out infinite; }
+/* Appel en cours : halo rouge (bouton de raccrochage, visuellement distinct), meme icone
+   pivotee a 135deg (rotation rigide, pas de deformation) pour evoquer le combine raccroche. */
+.webcall-btn-hangup .webcall-btn-icon-img {
+  transform: rotate(135deg);
+  filter: drop-shadow(0 0 8px rgba(201, 66, 66, 0.45)) drop-shadow(0 0 18px rgba(201, 66, 66, 0.25));
+}
+.webcall-btn-hangup:hover:not(:disabled) .webcall-btn-icon-img,
+.webcall-btn-hangup:focus-visible .webcall-btn-icon-img {
+  filter: drop-shadow(0 0 11px rgba(201, 66, 66, 0.6)) drop-shadow(0 0 24px rgba(201, 66, 66, 0.35));
+}
+@keyframes webcall-icon-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.webcall-status { font-size: 0.92rem; font-weight: 600; color: var(--muted); }
+.webcall-status.active { color: var(--success); display: inline-flex; align-items: center; }
+.webcall-status.active::before {
+  content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--success); margin-right: 7px; animation: webcall-pulse 1.4s ease-in-out infinite;
+}
+.webcall-status.error { color: var(--danger); }
+@keyframes webcall-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (max-width: 480px) {
+  .webcall-widget { flex-direction: column; align-items: center; gap: 12px; }
+  .webcall-btn-icon-img { width: 86px; }
+}
 .section-block { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px 22px; margin-bottom: 18px; box-shadow: var(--shadow); }
 .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.01em; }
 .section-block .section-title { padding-bottom: 8px; border-bottom: 1px solid var(--brand-soft); }
