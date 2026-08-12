@@ -114,7 +114,7 @@ function renderClientData(payload, rootSelector) {
     const agency = payload.agency;
     const agencyInitial = (agency.nomAgence || 'A').trim().charAt(0).toUpperCase() || 'A';
     root.innerHTML = `
-      <section class="hero-banner" style="background-image: url('/estacade-saint-jean-de-monts.png')">
+      <section class="hero-banner" style="background-image: url('/estacade-saint-jean-de-monts.jpg')">
         <div class="hero-overlay"></div>
         <div class="hero-banner-content">
           <div class="hero-badge">Bienvenue ${agency.prenom || 'client'}</div>
