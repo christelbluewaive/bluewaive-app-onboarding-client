@@ -81,6 +81,45 @@ a { color: var(--brand); text-decoration: none; }
   #compte-link::before { width: 12px; height: 12px; }
   .topbar-actions { gap: 6px; row-gap: 8px; }
 }
+
+/* Navigation persistante du portail client (Dashboard/Devis/Factures/Contrat/
+   Projet/Assistant vocal/Ressources) - un seul composant partage entre desktop
+   et mobile : barre horizontale toujours visible, defile horizontalement plutot
+   que de passer en barre d'onglets fixe sur petit ecran (pas de nouveau pattern
+   de layout). Rendue par renderPersistentNav() dans client-portal.js, injectee
+   dans le <nav id="app-nav"> present sur les pages principales du portail -
+   jamais sur les sous-pages (Fiche prospect) ni sur les pages hors portail
+   (login, simulateur ROI). */
+.app-nav {
+  display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  background: #ffffff; border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px; margin-bottom: 28px;
+  /* Scrollbar masquee proprement (le defilement tactile/trackpad reste actif -
+     seule la barre visuelle disparait, aucune fonctionnalite retiree). */
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.app-nav::-webkit-scrollbar { display: none; }
+.app-nav-item {
+  flex: 0 0 auto; display: inline-flex; align-items: center; white-space: nowrap;
+  font-weight: 600; font-size: 13.5px; color: var(--muted); text-decoration: none;
+  padding: 8px 16px; border-radius: 999px; transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.app-nav-item:hover { background: var(--brand-soft); color: var(--brand-dark); }
+.app-nav-item.active { background: var(--brand); color: #fff; font-weight: 800; box-shadow: 0 4px 10px rgba(70, 130, 180, 0.28); }
+@media (max-width: 640px) {
+  /* Constat mobile reel : 7 items ne tiennent jamais tous dans ~350px sans
+     texte illisible - la barre defile donc horizontalement (cf. overflow-x
+     ci-dessus), mais rien ne signalait qu'il restait des onglets hors champ
+     (dernier libellé visible coupe net, ex. "Ava..."). Fondu CSS pur en bord
+     droit (mask-image) pour indiquer qu'il y a plus a faire defiler, sans
+     changer le HTML ni le comportement de scroll existant. */
+  .app-nav {
+    margin-bottom: 20px; padding: 5px;
+    -webkit-mask-image: linear-gradient(to right, black 0%, black 90%, transparent 100%);
+    mask-image: linear-gradient(to right, black 0%, black 90%, transparent 100%);
+  }
+  .app-nav-item { font-size: 12.5px; padding: 7px 12px; }
+}
 .hero-banner {
   position: relative; width: 100%; height: 240px; background-size: cover; background-position: center; margin-bottom: 32px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 24px;
 }
@@ -199,8 +238,11 @@ a { color: var(--brand); text-decoration: none; }
   border-radius: 12px; background: var(--brand-soft); color: var(--brand-dark);
 }
 .tile-icon svg { width: 20px; height: 20px; }
-/* Avancement et Agent vocal : legerement mis en avant via une puce d'icone pleine,
-   meme systeme visuel que les autres tuiles (pas de design distinct). */
+/* Deux familles d'acces rapides : Devis/Factures/Contrat (commercial/admin,
+   carte blanche standard) vs Avancement/Ressources/Agent vocal (suivi/service,
+   .tile-accent) - meme teinte deja utilisee ailleurs dans la charte, pas de
+   nouvelle couleur, juste un fond leger en plus de la puce d'icone pleine. */
+.tile-accent { background: var(--brand-soft); }
 .tile-accent .tile-icon { background: var(--brand); color: #fff; }
 .tile-body { flex: 1 1 auto; min-width: 0; }
 .tile-body h3 { margin: 0 0 3px; font-size: 0.98rem; }
@@ -216,6 +258,12 @@ a { color: var(--brand); text-decoration: none; }
 }
 .doc-card .meta { color: var(--muted); font-size: 0.92rem; line-height: 1.5; }
 .doc-card strong { display: block; margin-bottom: 4px; font-size: 1rem; }
+/* Derniere activite prospect : l'action (RDV/lead/relance) ressort via un badge
+   semantique deja utilise ailleurs (.status-pill), le nom reste lisible sans
+   dominer, la date passe en second plan. */
+.activity-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; }
+.activity-name { font-weight: 700; color: var(--text); font-size: 1rem; }
+.activity-date { font-size: 0.82rem; }
 .doc-card-clickable { cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
 .doc-card-clickable:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(40, 30, 10, 0.08); border-color: var(--brand); }
 .doc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
@@ -233,10 +281,14 @@ a { color: var(--brand); text-decoration: none; }
 .status-pill.active { background: #e8f8ef; color: var(--success); }
 .status-pill.pending { background: #fff7e8; color: var(--warning); }
 .status-pill.critical { background: #ffe8e8; color: var(--danger); }
+.status-pill.info { background: var(--brand-soft); color: var(--brand-dark); }
 .placeholder-line { height: 10px; border-radius: 999px; background: linear-gradient(90deg, var(--line), #faf6ec); margin: 8px 0; }
 .kpis { display: flex; gap: 12px; flex-wrap: wrap; }
 .kpi { background: #faf6ec; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 140px; }
-.kpi strong { display: block; font-size: 1.2rem; color: var(--text); }
+/* Hierarchie renforcee : le chiffre doit dominer visuellement son libelle
+   (meme traitement pour tous les KPI - pas de palette differente par carte). */
+.kpi strong { display: block; font-size: 1.6rem; font-weight: 800; color: var(--brand-dark); line-height: 1.15; }
+.kpi span { display: block; margin-top: 2px; font-size: 0.76rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .timeline { display: flex; gap: 12px; flex-wrap: wrap; }
 .timeline-step { flex: 1 1 140px; border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fbf8f0; }
 .timeline-step.current { border-color: var(--brand); background: var(--brand-soft); }
@@ -282,6 +334,32 @@ a { color: var(--brand); text-decoration: none; }
 .info-field { display: flex; flex-direction: column; gap: 8px; }
 .info-field label { font-weight: 600; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .info-field p { margin: 0; font-size: 1rem; color: var(--text); }
+
+/* Fiche prospect (Voice OS) - variante dediee de .info-grid/.info-field
+   ci-dessus (que la page Compte continue d'utiliser telle quelle, non touchee).
+   Chaque champ recoit un encadre leger pour mieux separer les categories a la
+   lecture rapide, sans devenir un bloc lourd - meme palette beige/blanc/bleu
+   que le reste du portail (#fbf8f0 deja utilise par .timeline-step). */
+.prospect-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.prospect-info-field {
+  display: flex; flex-direction: column; gap: 6px;
+  background: #fbf8f0; border: 1px solid var(--line); border-radius: 14px;
+  padding: 12px 14px;
+}
+.prospect-info-field label {
+  font-weight: 700; font-size: 0.72rem; color: var(--brand-dark);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.prospect-info-field p { margin: 0; font-size: 1rem; color: var(--text); font-weight: 500; }
+.prospect-badge-field { justify-content: center; }
+
+/* Motivation : identifiee par une icone dans son titre (voir client-portal.js),
+   pas par une bordure coloree epaisse - reste une section-block classique. */
+
+/* Resume IA : mis en valeur par un fond teinte (meme ton que le reste de la
+   charte, pas une nouvelle couleur) plutot qu'un bloc blanc identique aux
+   autres sections - reste une simple carte, pas un encart domine. */
+.resume-ia-block { background: var(--brand-soft); border-color: var(--brand); }
 
 .security-form { display: flex; flex-direction: column; gap: 16px; max-width: 360px; }
 .security-field { display: flex; flex-direction: column; gap: 8px; }

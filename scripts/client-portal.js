@@ -45,6 +45,41 @@ function getAgencyIdFromUrl() {
   return window.location.pathname.split('/')[2] || 'agence-inconnue';
 }
 
+// Navigation persistante du portail client. Un seul composant pour desktop et
+// mobile (voir .app-nav dans styles.css) - injecte dans <nav id="app-nav">
+// s'il est present sur la page (absent volontairement sur les sous-pages comme
+// Fiche prospect, et sur les pages hors portail comme login/roi-simulator).
+// Ne liste que des routes reellement servies par lib/app.js (pageFiles) -
+// jamais de destination inventee. Le WebCall n'y figure jamais : c'est un
+// widget du Dashboard, pas une page de navigation.
+const APP_NAV_ITEMS = [
+  { key: '', label: 'Dashboard' },
+  { key: 'devis', label: 'Devis' },
+  { key: 'factures', label: 'Factures' },
+  { key: 'contrat', label: 'Contrat' },
+  { key: 'projet', label: 'Avancement' },
+  { key: 'retell', label: 'Assistant vocal' },
+  { key: 'ressources', label: 'Ressources' }
+];
+
+function renderPersistentNav() {
+  const nav = document.querySelector('#app-nav');
+  if (!nav) return;
+  const agencyId = getAgencyIdFromUrl();
+  // Sous-page courante = 3e segment de l'URL (/client/:agencyId/:subpage).
+  const currentSubpage = window.location.pathname.split('/')[3] || '';
+  nav.innerHTML = APP_NAV_ITEMS.map((item) => {
+    const href = item.key ? `/client/${agencyId}/${item.key}` : `/client/${agencyId}`;
+    const activeClass = item.key === currentSubpage ? ' active' : '';
+    return `<a class="app-nav-item${activeClass}" href="${href}">${escapeHtml(item.label)}</a>`;
+  }).join('');
+  // Sur mobile, la barre defile horizontalement (voir .app-nav) : si l'onglet
+  // actif tombe hors du champ visible au chargement (ex. arrivee directe sur
+  // "Ressources"), on le ramene dans la zone visible sans scroll de la page.
+  const activeItem = nav.querySelector('.app-nav-item.active');
+  if (activeItem) activeItem.scrollIntoView({ block: 'nearest', inline: 'center' });
+}
+
 // Section "Sécurité du compte" (page Votre compte). Ne journalise jamais les
 // mots de passe saisis, seulement les messages de retour utilisateur.
 function initChangePasswordForm(agencyId) {
@@ -184,7 +219,7 @@ function renderClientData(payload, rootSelector) {
             <span class="tile-body"><h3>Avancement</h3><p>Suivez les etapes de votre onboarding.</p></span>
             <span class="tile-chevron">${ICON_CHEVRON}</span>
           </a>
-          <a class="tile" href="/client/${agency.id}/ressources">
+          <a class="tile tile-accent" href="/client/${agency.id}/ressources">
             <span class="tile-icon">${ICON_RESSOURCES}</span>
             <span class="tile-body"><h3>Ressources</h3><p>Accedez aux guides et supports utiles.</p></span>
             <span class="tile-chevron">${ICON_CHEVRON}</span>
@@ -547,14 +582,27 @@ function renderClientData(payload, rootSelector) {
       <section class="section-block">
         <div class="section-title">Dernières activités prospects</div>
         <div class="grid">
-          ${activityItems.length ? activityItems.map(item => `
+          ${activityItems.length ? activityItems.map(item => {
+            // item.type ('rdv'/'lead'/'relance') est deja fourni par le serveur
+            // (voir buildLiveData) - reutilise ici uniquement pour le style, sans
+            // toucher aux donnees. Meme systeme de badge que la fiche prospect.
+            const ACTIVITY_STYLE = { rdv: 'active', lead: 'info', relance: 'pending' };
+            const pillClass = ACTIVITY_STYLE[item.type] || 'info';
+            const separatorIndex = item.label.indexOf(' - ');
+            const action = separatorIndex === -1 ? item.label : item.label.slice(0, separatorIndex);
+            const name = separatorIndex === -1 ? '' : item.label.slice(separatorIndex + 3);
+            return `
             <div class="doc-card${item.prospectToken ? ' doc-card-clickable' : ''}"${item.prospectToken ? ` data-prospect-token="${item.prospectToken}"` : ''}>
               <div>
-                <strong>${item.label}</strong>
-                <div class="meta">${item.date || ''}</div>
+                <div class="activity-line">
+                  <span class="status-pill ${pillClass}">${action}</span>
+                  ${name ? `<span class="activity-name">${name}</span>` : ''}
+                </div>
+                <div class="meta activity-date">${item.date || ''}</div>
               </div>
             </div>
-          `).join('') : '<div class="meta">Aucune activité disponible pour le moment.</div>'}
+          `;
+          }).join('') : '<div class="meta">Aucune activité disponible pour le moment.</div>'}
         </div>
       </section>
     `;
@@ -580,16 +628,32 @@ function renderClientData(payload, rootSelector) {
       ['Téléphone', p.telephone],
       ['Email', p.email]
     ].filter(([, value]) => value);
+    // Priorite/Statut/Profil : badge visuel plutot que texte brut. Seule "Priorite"
+    // a un enum reellement documente (CHAUD/TIEDE/FROID, voir CLAUDE.md) -> couleur
+    // semantique ; Statut/Profil recoivent un badge neutre (pas de mapping invente
+    // faute d'enum confirme cote Airtable Voice OS).
+    const BADGE_FIELDS = new Set(['Profil', 'Priorité', 'Statut']);
+    const priorityPillClass = (value) => {
+      const v = (value || '').toLowerCase();
+      if (v.includes('chaud')) return 'critical';
+      if (v.includes('tiède') || v.includes('tiede')) return 'pending';
+      return 'info'; // froid, ou toute autre valeur non reconnue
+    };
 
     root.innerHTML = createNavigationBanner(agencyId, 'Fiche prospect') + `
       <section class="section-block">
         <div class="section-title">${[p.prenom, p.nom].filter(Boolean).join(' ') || 'Prospect'}</div>
-        <div class="info-grid">
-          ${fieldRows.map(([label, value]) => `<div class="info-field"><label>${label}</label><p>${value}</p></div>`).join('')}
+        <div class="prospect-info-grid">
+          ${fieldRows.map(([label, value]) => {
+            const isBadge = BADGE_FIELDS.has(label);
+            const pillClass = label === 'Priorité' ? priorityPillClass(value) : 'info';
+            const valueMarkup = isBadge ? `<span class="status-pill ${pillClass}">${value}</span>` : `<p>${value}</p>`;
+            return `<div class="prospect-info-field${isBadge ? ' prospect-badge-field' : ''}"><label>${label}</label>${valueMarkup}</div>`;
+          }).join('')}
         </div>
       </section>
-      ${p.motivation ? `<section class="section-block"><div class="section-title">Motivation</div><p class="meta">${p.motivation}</p></section>` : ''}
-      ${p.resume ? `<section class="section-block"><div class="section-title">Résumé IA</div><p class="meta">${p.resume}</p></section>` : ''}
+      ${p.motivation ? `<section class="section-block"><div class="section-title">🎯 Motivation</div><p class="meta">${p.motivation}</p></section>` : ''}
+      ${p.resume ? `<section class="section-block resume-ia-block"><div class="section-title">✨ Résumé IA</div><p class="meta">${p.resume}</p></section>` : ''}
       ${p.resumeRdv ? `<section class="section-block"><div class="section-title">Résumé retour RDV</div><p class="meta">${p.resumeRdv}</p></section>` : ''}
       ${p.relances && p.relances.length ? `
         <section class="section-block">
@@ -889,6 +953,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const compteLink = document.querySelector('#compte-link');
   if (compteLink) compteLink.href = `/client/${getAgencyIdFromUrl()}/compte`;
+
+  renderPersistentNav();
 
   const overview = document.querySelector('#overview-root');
   const devis = document.querySelector('#devis-root');
