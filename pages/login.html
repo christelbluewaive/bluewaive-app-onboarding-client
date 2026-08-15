@@ -129,6 +129,21 @@
         width: auto;
         border-radius: 8px;
       }
+      /* Page hors du .page-shell partage (pas de client-portal.js ici) : meme
+         texte legal que le reste du portail, ajoute en statique. Position fixe
+         en bas de viewport pour ne pas perturber le centrage vertical de la
+         carte de connexion ; couleur claire semi-transparente adaptee au fond
+         degrade fonce (var(--muted) serait illisible ici). */
+      .login-footer {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 16px;
+        text-align: center;
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.75);
+        padding: 0 16px;
+      }
     </style>
   </head>
   <body>
@@ -174,6 +189,7 @@
         </form>
       </div>
     </div>
+    <p class="login-footer">© 2026 Bluewaive. Tous droits réservés.</p>
 
     <script>
       const REMEMBER_EMAIL_KEY = 'bw_remembered_email';

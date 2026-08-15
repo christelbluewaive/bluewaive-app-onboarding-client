@@ -314,6 +314,19 @@ const APP_NAV_ITEMS = [
   { key: 'ressources', label: 'Ressources', colorClass: 'nav-color-ressources' }
 ];
 
+// Footer legal, injecte une seule fois a la fin de .page-shell - appele depuis
+// le DOMContentLoaded commun a toutes les pages du portail (voir bas de
+// fichier), donc couvre automatiquement toute page qui inclut ce script sans
+// avoir a dupliquer le HTML dans chaque fichier pages/*.html.
+function renderPortalFooter() {
+  const shell = document.querySelector('.page-shell');
+  if (!shell || shell.querySelector('.portal-footer')) return;
+  const footer = document.createElement('p');
+  footer.className = 'portal-footer';
+  footer.textContent = '© 2026 Bluewaive. Tous droits réservés.';
+  shell.appendChild(footer);
+}
+
 function renderPersistentNav() {
   const nav = document.querySelector('#app-nav');
   if (!nav) return;
@@ -874,6 +887,11 @@ function renderClientData(payload, rootSelector) {
 
   if (rootSelector === '#compte-root') {
     const compte = payload.compte || {};
+    // Offre/tarif : lus depuis l'agence deja resolue par le serveur (Offres,
+    // liee via "Offre Souscrite" - meme donnee que compte.abonnement ci-dessus,
+    // prixMensuel en plus) - jamais une offre/un tarif fixe code en dur, chaque
+    // agence peut etre sur un palier different (Genesis/Core/Scale).
+    const offre = (payload.agency && payload.agency.offreSouscrite) || {};
     const agencyId = getAgencyIdFromUrl();
     const agencyInitial = (compte.nomAgence || 'A').trim().charAt(0).toUpperCase() || 'A';
     const contactInitial = (compte.nomContact || 'C').trim().charAt(0).toUpperCase() || 'C';
@@ -940,6 +958,20 @@ function renderClientData(payload, rootSelector) {
           <div class="info-field"><label>Plan actuel</label><p><strong>${compte.abonnement}</strong></p></div>
           <div class="info-field"><label>Date d'abonnement</label><p>${compte.dateAbonnement}</p></div>
           <div class="info-field"><label>Statut</label><p><span class="status-pill active">${compte.statut}</span></p></div>
+        </div>
+      </section>
+      <section class="section-block">
+        <div class="section-title">Facturation et abonnement</div>
+        <div class="billing-block">
+          <div class="billing-info">
+            <div class="billing-offer">${escapeHtml(offre.nom) || 'Abonnement Bluewaive'}</div>
+            <div class="billing-price">${offre.prixMensuel ? `${offre.prixMensuel} € / mois` : 'Tarif non disponible'}</div>
+            <p class="billing-description">Votre abonnement assure l’utilisation continue de votre agent vocal Bluewaive, sa maintenance et les mises à jour du service.</p>
+          </div>
+          <div class="billing-action">
+            <span class="status-pill pending">À activer</span>
+            <a class="btn-primary" href="https://buy.stripe.com/aFaFzHidW98B4XVbtn60007" target="_blank" rel="noopener noreferrer">Activer mon abonnement</a>
+          </div>
         </div>
       </section>
       <section class="section-block">
@@ -1488,6 +1520,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (compteLink) compteLink.href = `/client/${getAgencyIdFromUrl()}/compte`;
 
   renderPersistentNav();
+  renderPortalFooter();
 
   const overview = document.querySelector('#overview-root');
   const documents = document.querySelector('#documents-root');

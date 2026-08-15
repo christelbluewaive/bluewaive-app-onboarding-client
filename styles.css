@@ -550,6 +550,21 @@ a { color: var(--brand); text-decoration: none; }
    autres sections - reste une simple carte, pas un encart domine. */
 .resume-ia-block { background: var(--brand-soft); border-color: var(--brand); }
 
+/* Bloc "Facturation et abonnement" (page Votre compte) : carte sobre, pas de
+   nouvelle couleur (statut "À activer" reutilise .status-pill.pending deja
+   utilise partout pour un etat "pas encore fait"). Bouton en .btn-primary
+   generique - cette page n'appartient a aucun des 4 univers colores. */
+.billing-block { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
+.billing-info { flex: 1 1 280px; min-width: 0; }
+.billing-offer { font-weight: 700; font-size: 1rem; color: var(--text); margin-bottom: 2px; }
+.billing-price { font-size: 1.4rem; font-weight: 800; color: var(--brand-dark); margin: 2px 0 8px; }
+.billing-description { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.5; max-width: 480px; }
+.billing-action { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; flex: 0 0 auto; }
+@media (max-width: 800px) {
+  .billing-action { width: 100%; }
+  .billing-action .btn-primary { width: 100%; text-align: center; }
+}
+
 .security-form { display: flex; flex-direction: column; gap: 16px; max-width: 360px; }
 .security-field { display: flex; flex-direction: column; gap: 8px; }
 .security-field label { font-weight: 600; font-size: 0.9rem; color: var(--muted); }
@@ -571,4 +586,19 @@ a { color: var(--brand); text-decoration: none; }
   .contact-card { flex-direction: column; align-items: flex-start; }
   .doc-footer { flex-direction: column; align-items: flex-start; }
   .donut-body { flex-direction: column; align-items: flex-start; }
+}
+
+/* Footer legal du portail : injecte une fois par page (voir client-portal.js,
+   DOMContentLoaded) a la fin de .page-shell - pas un nouveau bloc visuel, juste
+   une mention discrete. Couleur neutre deja presente (var(--muted)), aucune
+   nouvelle couleur de rubrique. */
+.portal-footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+@media (max-width: 480px) {
+  .portal-footer { margin-top: 32px; font-size: 0.76rem; padding-left: 12px; padding-right: 12px; }
 }
