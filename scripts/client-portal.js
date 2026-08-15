@@ -579,7 +579,7 @@ function renderClientData(payload, rootSelector) {
           <img src="/christel-bluewaive.png" alt="Christel" class="contact-photo">
           <div>
             <h3>Christel</h3>
-            <p>Votre accompagnante pour l'onboarding, les documents et les premières étapes de mise en service.</p>
+            <p>Votre interlocutrice dédiée pour l’onboarding, les documents et les premières étapes de mise en service.</p>
             <div class="contact-actions">
               <a href="https://mail.google.com/mail/?view=cm&fs=1&to=christel@bluewaive.fr" target="_blank" rel="noreferrer">Contacter par email</a>
             </div>
