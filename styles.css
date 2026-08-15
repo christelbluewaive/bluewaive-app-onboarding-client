@@ -12,6 +12,15 @@
   --warning: #c27a00;
   --danger: #c94242;
   --shadow: 0 10px 35px rgba(40, 30, 10, 0.08);
+  /* Identite couleur par univers (nav / tuiles Dashboard / accents de section) -
+     voir styles.css "Univers de section" plus bas pour leur usage exact.
+     --agent-vocal est distinct de --brand : #2682B4 est la teinte specifique
+     demandee pour l'univers Agent vocal (deja utilisee ailleurs dans l'app,
+     ex. widget WebCall), --brand (#4682B4) reste la couleur generique du
+     portail (liens, boutons par defaut, etc.) et n'est pas modifiee. */
+  --agent-vocal: #2682B4;
+  --avancement: #2E7D32;
+  --ressources-violet: #7B2CBF;
 }
 
 * { box-sizing: border-box; }
@@ -90,35 +99,69 @@ a { color: var(--brand); text-decoration: none; }
    dans le <nav id="app-nav"> present sur les pages principales du portail -
    jamais sur les sous-pages (Fiche prospect) ni sur les pages hors portail
    (login, simulateur ROI). */
+/* Nav persistante : .app-nav = pill exterieure (fixe, jamais de scroll dessus) ;
+   .app-nav-scroll = rangee interne qui defile horizontalement ; deux boutons
+   flèche (.app-nav-chevron) apparaissent uniquement quand il reste du contenu
+   a atteindre dans cette direction (geres en JS, voir renderPersistentNav) -
+   navigation exploitable au clic/tap en plus du swipe/scroll tactile. */
 .app-nav {
+  position: relative; background: #ffffff; border: 1px solid var(--line);
+  border-radius: 999px; padding: 6px; margin-bottom: 28px;
+}
+.app-nav-scroll {
   display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch;
-  background: #ffffff; border: 1px solid var(--line); border-radius: 999px;
-  padding: 6px; margin-bottom: 28px;
-  /* Scrollbar masquee proprement (le defilement tactile/trackpad reste actif -
-     seule la barre visuelle disparait, aucune fonctionnalite retiree). */
+  /* Pas de "scroll-behavior: smooth" ici (deliberement) : le clic sur les
+     fleches deplace instantanement (voir client-portal.js) pour rester fiable
+     partout ; le defilement tactile/trackpad natif reste fluide de lui-meme. */
   scrollbar-width: none; -ms-overflow-style: none;
 }
-.app-nav::-webkit-scrollbar { display: none; }
+.app-nav-scroll::-webkit-scrollbar { display: none; }
+.app-nav-scroll.has-overflow {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, black 14px, black calc(100% - 14px), transparent 100%);
+}
 .app-nav-item {
   flex: 0 0 auto; display: inline-flex; align-items: center; white-space: nowrap;
   font-weight: 600; font-size: 13.5px; color: var(--muted); text-decoration: none;
   padding: 8px 16px; border-radius: 999px; transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 .app-nav-item:hover { background: var(--brand-soft); color: var(--brand-dark); }
-.app-nav-item.active { background: var(--brand); color: #fff; font-weight: 800; box-shadow: 0 4px 10px rgba(70, 130, 180, 0.28); }
+.app-nav-item.active {
+  background: var(--brand); color: #fff; font-weight: 800; font-size: 14.5px;
+  box-shadow: 0 4px 10px rgba(70, 130, 180, 0.32);
+}
+/* Univers de section (voir renderPersistentNav dans client-portal.js, classe
+   `nav-color-*` ajoutee par item) : l'onglet actif ET son survol reprennent la
+   couleur exacte de la section qu'il ouvre, jamais le bleu generique du portail
+   pour Documents/Avancement/Ressources. Dashboard (aucune classe nav-color-*)
+   garde le bleu par defaut ci-dessus, inchange - aucune couleur ne lui a ete
+   assignee. Selecteurs a 3 classes (specificite superieure a .app-nav-item.active
+   seul) : pas besoin de !important. */
+.app-nav-item.nav-color-documents:hover { background: rgba(201, 162, 39, 0.16); color: #8a6f1c; }
+.app-nav-item.nav-color-documents.active { background: var(--gold); box-shadow: 0 4px 10px rgba(201, 162, 39, 0.35); }
+.app-nav-item.nav-color-avancement:hover { background: rgba(46, 125, 50, 0.14); color: #1f5723; }
+.app-nav-item.nav-color-avancement.active { background: var(--avancement); box-shadow: 0 4px 10px rgba(46, 125, 50, 0.32); }
+.app-nav-item.nav-color-agent-vocal:hover { background: rgba(38, 130, 180, 0.14); color: var(--agent-vocal); }
+.app-nav-item.nav-color-agent-vocal.active { background: var(--agent-vocal); box-shadow: 0 4px 10px rgba(38, 130, 180, 0.32); }
+.app-nav-item.nav-color-ressources:hover { background: rgba(123, 44, 191, 0.14); color: #5b1f8f; }
+.app-nav-item.nav-color-ressources.active { background: var(--ressources-violet); box-shadow: 0 4px 10px rgba(123, 44, 191, 0.32); }
+/* Boutons de defilement : cercle blanc flottant, jamais bloquant, masques via
+   [hidden] des qu'il n'y a plus rien a atteindre dans cette direction. */
+.app-nav-chevron {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line);
+  background: #ffffff; color: var(--brand-dark); display: flex; align-items: center;
+  justify-content: center; font-size: 13px; line-height: 1; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(40, 30, 10, 0.16); padding: 0;
+}
+.app-nav-chevron:hover { background: var(--brand-soft); }
+.app-nav-chevron[hidden] { display: none; }
+.app-nav-chevron-prev { left: 2px; }
+.app-nav-chevron-next { right: 2px; }
 @media (max-width: 640px) {
-  /* Constat mobile reel : 7 items ne tiennent jamais tous dans ~350px sans
-     texte illisible - la barre defile donc horizontalement (cf. overflow-x
-     ci-dessus), mais rien ne signalait qu'il restait des onglets hors champ
-     (dernier libellé visible coupe net, ex. "Ava..."). Fondu CSS pur en bord
-     droit (mask-image) pour indiquer qu'il y a plus a faire defiler, sans
-     changer le HTML ni le comportement de scroll existant. */
-  .app-nav {
-    margin-bottom: 20px; padding: 5px;
-    -webkit-mask-image: linear-gradient(to right, black 0%, black 90%, transparent 100%);
-    mask-image: linear-gradient(to right, black 0%, black 90%, transparent 100%);
-  }
+  .app-nav { margin-bottom: 20px; padding: 5px; }
   .app-nav-item { font-size: 12.5px; padding: 7px 12px; }
+  .app-nav-item.active { font-size: 13px; }
 }
 .hero-banner {
   position: relative; width: 100%; height: 240px; background-size: cover; background-position: center; margin-bottom: 32px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 24px;
@@ -152,6 +195,23 @@ a { color: var(--brand); text-decoration: none; }
 .contact-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .contact-actions a { display: inline-flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 999px; background: var(--brand-soft); font-weight: 600; }
 
+/* Page "Votre compte" - blocs "Identité de l'agence" / "Contact principal" :
+   variante de .contact-card (memes proportions/avatar/photo) avec un bouton d'action
+   dans le bloc texte. Le conteneur d'apercu (.account-media-thumb) affiche soit
+   .agency-logo/.contact-photo (image reelle), soit .contact-avatar (initiale, repli). */
+.account-media-card { align-items: center; }
+.account-media-thumb { display: flex; flex-shrink: 0; }
+.account-media-info { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.account-media-info h3 { margin: 0; font-size: 1rem; }
+.account-media-info p { margin: 0; color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
+.btn-outline {
+  display: inline-flex; align-items: center; justify-content: center; align-self: flex-start;
+  padding: 7px 14px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-dark);
+  font-weight: 600; font-size: 0.85rem; border: none; cursor: pointer; transition: background 0.2s ease;
+}
+.btn-outline:hover { background: #e6dcc5; }
+.btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* Widget "Parler avec [Agent Vocal]" (Web Call Retell, carte Votre assistante vocale).
    Icone dediee : /icone-web-call.png (copie telle quelle depuis
    bluewaive-voice-os/90-assets/web-call/icone-web-call.png, PNG RGBA transparent,
@@ -161,6 +221,17 @@ a { color: var(--brand); text-decoration: none; }
    le bleu de l'icone - pas besoin de support). Le nom de l'action vit dans l'aria-label
    (mis a jour par etat cote JS), le "qui" est deja donne par la carte au-dessus. */
 .webcall-widget { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 8px; }
+/* Carte "Votre assistante vocale" uniquement (.contact-card-assistant, en plus de
+   .contact-card - ne touche pas la carte "Votre interlocutrice Bluewaive" qui reste sur
+   les regles .contact-card par defaut) : widget rattache dans la meme carte que le
+   logo/texte, aligne a droite sur une seule ligne des que la largeur le permet.
+   .contact-card passe deja en colonne sous 800px (regle existante plus bas) - le widget
+   suit alors sous le bloc texte, toujours a l'interieur de la carte. */
+.contact-card-assistant { flex-wrap: wrap; }
+.contact-card-assistant .webcall-widget { margin-top: 0; margin-left: auto; }
+@media (max-width: 800px) {
+  .contact-card-assistant .webcall-widget { margin-left: 0; }
+}
 .webcall-btn {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
   padding: 10px; border: none; background: none; box-shadow: none; cursor: pointer;
@@ -238,12 +309,23 @@ a { color: var(--brand); text-decoration: none; }
   border-radius: 12px; background: var(--brand-soft); color: var(--brand-dark);
 }
 .tile-icon svg { width: 20px; height: 20px; }
-/* Deux familles d'acces rapides : Devis/Factures/Contrat (commercial/admin,
-   carte blanche standard) vs Avancement/Ressources/Agent vocal (suivi/service,
-   .tile-accent) - meme teinte deja utilisee ailleurs dans la charte, pas de
-   nouvelle couleur, juste un fond leger en plus de la puce d'icone pleine. */
-.tile-accent { background: var(--brand-soft); }
-.tile-accent .tile-icon { background: var(--brand); color: #fff; }
+/* Chaque tuile "Acces rapides" reprend la couleur exacte de la section qu'elle
+   ouvre (voir renderClientData #overview-root dans client-portal.js) :
+   - .tile-gold (Documents) : --gold #c9a227, deja utilise pour toute l'identite
+     Documents (page hub, boutons .btn-gold) - inchange par cette tache.
+   - .tile-green (Avancement) : --avancement #2E7D32.
+   - .tile-violet (Ressources) : --ressources-violet #7B2CBF.
+   - .tile-blue (Agent vocal) : --agent-vocal #2682B4 (distinct de --brand
+     #4682B4, generique au reste du portail - #2682B4 est la teinte exacte
+     demandee pour cet univers, deja utilisee par le widget WebCall). */
+.tile-gold { background: #fff7e8; border-color: #ecdba8; }
+.tile-gold .tile-icon { background: var(--gold); color: #fff; }
+.tile-green { background: #eaf5ec; border-color: #bfe0c4; }
+.tile-green .tile-icon { background: var(--avancement); color: #fff; }
+.tile-violet { background: #f3ebfa; border-color: #d9c2ef; }
+.tile-violet .tile-icon { background: var(--ressources-violet); color: #fff; }
+.tile-blue { background: var(--brand-soft); border-color: #cddce6; }
+.tile-blue .tile-icon { background: var(--agent-vocal); color: #fff; }
 .tile-body { flex: 1 1 auto; min-width: 0; }
 .tile-body h3 { margin: 0 0 3px; font-size: 0.98rem; }
 .tile-body p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
@@ -253,6 +335,10 @@ a { color: var(--brand); text-decoration: none; }
 }
 .tile-chevron svg { width: 18px; height: 18px; }
 .tile:hover .tile-chevron { transform: translateX(3px); color: var(--brand); }
+.tile-gold:hover .tile-chevron { color: var(--gold); }
+.tile-green:hover .tile-chevron { color: var(--avancement); }
+.tile-violet:hover .tile-chevron { color: var(--ressources-violet); }
+.tile-blue:hover .tile-chevron { color: var(--agent-vocal); }
 .doc-card {
   display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(135deg, #ffffff 0%, #fbf7ec 100%); box-shadow: 0 6px 18px rgba(40, 30, 10, 0.04);
 }
@@ -282,13 +368,86 @@ a { color: var(--brand); text-decoration: none; }
 .status-pill.pending { background: #fff7e8; color: var(--warning); }
 .status-pill.critical { background: #ffe8e8; color: var(--danger); }
 .status-pill.info { background: var(--brand-soft); color: var(--brand-dark); }
+
+/* Page "Ressources" : grille de cartes (voir RESOURCE_CARDS/renderResourceCard
+   dans client-portal.js). Hauteur coherente entre cartes (align-items: stretch,
+   grille par defaut) + bouton toujours ancre en bas via margin-top: auto sur le
+   pied de carte. auto-fit/minmax gere seul le passage a 2/3 colonnes puis 1
+   colonne sur mobile, sans media query dediee. */
+.resource-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.resource-card {
+  display: flex; flex-direction: column; height: 100%; gap: 10px; padding: 22px;
+  border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(135deg, #ffffff 0%, #fbf7ec 100%);
+  box-shadow: 0 6px 18px rgba(40, 30, 10, 0.04);
+}
+.resource-icon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 42px; height: 42px;
+  border-radius: 12px; margin-bottom: 4px;
+}
+.resource-icon svg { width: 21px; height: 21px; }
+.resource-accent-blue { background: rgba(70, 130, 180, 0.14); color: var(--brand-dark); }
+.resource-accent-gold { background: rgba(201, 162, 39, 0.16); color: #8a6f1c; }
+.resource-accent-green { background: rgba(30, 142, 87, 0.14); color: var(--success); }
+.resource-accent-dark { background: rgba(47, 93, 130, 0.16); color: var(--brand-dark); }
+.resource-accent-cyan { background: rgba(23, 162, 184, 0.14); color: #12808f; }
+.resource-accent-ocre { background: rgba(194, 122, 0, 0.14); color: var(--warning); }
+.resource-accent-purple { background: rgba(124, 95, 176, 0.16); color: #6b5b95; }
+.resource-title { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text); }
+.resource-desc { margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.5; flex: 1 1 auto; }
+.resource-footer { margin-top: auto; padding-top: 4px; }
+.resource-footer .btn-primary { width: 100%; }
+
+/* Page "Documents" : cartes-resume Devis/Factures/Contrat/Cahier des charges
+   (voir buildDocumentHubCards/renderDocumentHubCard dans client-portal.js).
+   Famille doree/ocre - meme teinte que les anciennes tuiles "Acces rapides"
+   .tile-gold du Dashboard, jamais le bleu reserve a la navigation/aux actions
+   Avancement/Assistant vocal. .grid-2 gere deja seul le passage a 1 colonne
+   sur mobile (voir media query plus bas), aucune regle dediee necessaire ici. */
+.doc-hub-card {
+  display: flex; flex-direction: column; height: 100%; gap: 10px; padding: 22px;
+  border: 1px solid #ecdba8; border-radius: 18px; background: linear-gradient(135deg, #fffdf7 0%, #fff7e8 100%);
+  box-shadow: 0 6px 18px rgba(40, 30, 10, 0.05);
+}
+.doc-hub-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.doc-hub-icon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 42px; height: 42px;
+  border-radius: 12px; background: var(--gold); color: #fff;
+}
+.doc-hub-icon svg { width: 21px; height: 21px; }
+.doc-hub-title { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.doc-hub-desc { margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+.doc-hub-figures { display: flex; gap: 20px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid #ecdba8; border-bottom: 1px solid #ecdba8; }
+.doc-hub-figure { display: flex; flex-direction: column; gap: 2px; }
+.doc-hub-figure .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.doc-hub-figure .value { font-size: 0.92rem; font-weight: 700; color: var(--text); }
+.doc-hub-footer { margin-top: auto; padding-top: 4px; }
+.doc-hub-footer .btn-primary { width: 100%; }
+/* Variante doree/ocre du bouton principal (jamais utilisee pour une action
+   Retell/agent vocal) - memes dimensions/etats que .btn-primary, seule la
+   teinte change. */
+.btn-gold { background: var(--gold); box-shadow: 0 8px 20px rgba(201, 162, 39, 0.3); }
+.btn-gold:hover { background: #a9841c; }
+/* Variante violette du bouton principal, univers Ressources (--ressources-violet
+   #7B2CBF) - remplace le bleu generique .btn-primary sur les boutons d'action
+   des cartes Ressources pour ne pas entrer en collision avec le bleu reserve a
+   l'univers Agent vocal (#2682B4). */
+.btn-violet { background: var(--ressources-violet); box-shadow: 0 8px 20px rgba(123, 44, 191, 0.3); }
+.btn-violet:hover { background: #5b1f8f; }
+
 .placeholder-line { height: 10px; border-radius: 999px; background: linear-gradient(90deg, var(--line), #faf6ec); margin: 8px 0; }
 .kpis { display: flex; gap: 12px; flex-wrap: wrap; }
 .kpi { background: #faf6ec; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 140px; }
-/* Hierarchie renforcee : le chiffre doit dominer visuellement son libelle
-   (meme traitement pour tous les KPI - pas de palette differente par carte). */
+/* Hierarchie renforcee : le chiffre doit dominer visuellement son libelle. */
 .kpi strong { display: block; font-size: 1.6rem; font-weight: 800; color: var(--brand-dark); line-height: 1.15; }
 .kpi span { display: block; margin-top: 2px; font-size: 0.76rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+/* Performance de l'agent vocal : deux familles (memes couleurs que les
+   Acces rapides, meme logique dans tout le portail) - "call" = activite
+   d'appel (bleu), "result" = resultat commercial (or). Vue d'ensemble du
+   Dashboard garde le fond neutre par defaut (pas de nature call/result). */
+.kpi-call { background: var(--brand-soft); border-color: #cddce6; }
+.kpi-call strong { color: var(--agent-vocal); }
+.kpi-result { background: #fff7e8; border-color: #ecdba8; }
+.kpi-result strong { color: var(--warning); }
 .timeline { display: flex; gap: 12px; flex-wrap: wrap; }
 .timeline-step { flex: 1 1 140px; border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #fbf8f0; }
 .timeline-step.current { border-color: var(--brand); background: var(--brand-soft); }
@@ -310,11 +469,22 @@ a { color: var(--brand); text-decoration: none; }
 .donut-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--brand-soft); font-size: 0.85rem; }
 .donut-detail ul { margin: 0; padding-left: 18px; }
 
-/* Progression globale - bloc premium (donut + resume + liste des etapes) */
+/* Progression globale - bloc premium (barre horizontale + resume + liste des
+   etapes). Le donut circulaire d'origine a ete remplace par une barre - voir
+   .progress-bar-* ci-dessous. Les classes .donut-chart/.donut-panel/etc.
+   restent utilisees telles quelles par les mini-donuts par etape (section
+   "Avancement du projet" au-dessus), non concernee par ce changement. */
 .progress-global { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
-.progress-global-donut { flex: 0 0 auto; }
-.donut-chart-lg { width: 200px; height: 200px; min-width: 200px; }
-.donut-percent-lg { font-size: 1.9rem; }
+.progress-bar-block { flex-basis: 100%; }
+.progress-bar-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.progress-bar-label { font-weight: 700; color: var(--text); font-size: 1rem; }
+/* Univers Avancement (--avancement #2E7D32) : ces 3 classes ne sont utilisees
+   que sur la page Avancement (#projet-root) - recoloration ciblee, sans toucher
+   a --success (badges "Termine"/"Payee"/etc. partages par tout le portail,
+   volontairement inchanges). */
+.progress-bar-value { font-weight: 800; font-size: 1.4rem; color: var(--avancement); }
+.progress-bar-track { width: 100%; height: 12px; background: var(--brand-soft); border-radius: 999px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--avancement); border-radius: 999px; }
 .progress-global-summary { flex: 1 1 220px; min-width: 220px; }
 .progress-global-headline { font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0 0 14px; letter-spacing: -0.01em; }
 .progress-global-stats { display: flex; flex-direction: column; gap: 10px; }
@@ -326,8 +496,6 @@ a { color: var(--brand); text-decoration: none; }
 .progress-global-step { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; }
 @media (max-width: 640px) {
   .progress-global { flex-direction: column; align-items: stretch; }
-  .progress-global-donut { display: flex; justify-content: center; }
-  .donut-chart-lg { width: 160px; height: 160px; min-width: 160px; }
 }
 .donut-detail li { margin: 4px 0; color: var(--muted); }
 .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; }

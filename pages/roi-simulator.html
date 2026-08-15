@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Simulateur ROI - Outil interne Bluewaive</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      /* Styles propres a cet outil - non partages avec le reste du portail. Reutilisent
+         les tokens (--brand, --success, --danger, --line, --panel, --muted...) deja
+         definis dans /styles.css plutot que d'en redefinir. */
+      .roi-shell { max-width: 980px; margin: 0 auto; padding: 28px 20px 60px; }
+      /* Header pro : logo a gauche, titre/sous-titre/badge dans la zone principale a
+         droite - empile logo au-dessus en dessous de 560px (mobile), tout reste centre. */
+      .roi-header { display: flex; align-items: center; gap: 18px; text-align: left; margin-bottom: 22px; }
+      .roi-header-main { flex: 1; min-width: 0; }
+      .roi-logo { height: 42px; width: auto; flex-shrink: 0; display: block; border-radius: 10px; overflow: hidden; }
+      @media (max-width: 560px) {
+        .roi-header { flex-direction: column; text-align: center; gap: 10px; }
+      }
+      @media (max-width: 480px) { .roi-logo { height: 34px; } }
+      .roi-header h1 { margin: 0 0 6px; font-size: 1.4rem; color: var(--brand-dark); letter-spacing: -0.01em; }
+      .roi-header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+      .roi-private-tag {
+        display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 5px 12px;
+        border-radius: 999px; background: #fff7e8; color: var(--warning); font-size: 0.78rem; font-weight: 700;
+        letter-spacing: 0.02em; text-transform: uppercase;
+      }
+
+      .roi-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+      .roi-tab {
+        flex: 1; text-align: center; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line);
+        background: var(--panel); color: var(--muted); font-weight: 700; font-size: 0.94rem; cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      }
+      .roi-tab strong { display: block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.75; margin-bottom: 2px; }
+      .roi-tab.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+      .roi-tab.active strong { opacity: 0.9; }
+
+      /* Disposition generale de la page : parametres a gauche, resultats a droite sur
+         desktop - empiles (parametres puis resultats, ordre naturel du DOM) en dessous
+         de 760px (mobile/tablette). */
+      .roi-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+      @media (max-width: 760px) {
+        .roi-layout { grid-template-columns: 1fr; }
+      }
+
+      .roi-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+      .roi-field:last-child { margin-bottom: 0; }
+      .roi-field label { font-size: 0.86rem; color: var(--text); font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+      .roi-field label .roi-val { color: var(--brand-dark); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .roi-field input[type="range"] { width: 100%; accent-color: var(--brand); height: 22px; }
+      .roi-field input[type="number"] {
+        width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.95rem;
+        font-family: inherit; color: var(--text);
+      }
+      .roi-field input[type="number"]:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+      /* Champ hybride "Appels manqués / mois" : le volume est la donnee la plus visible
+         (input agrandi), le pourcentage n'est qu'une traduction automatique juste en
+         dessous, le slider reste present mais visuellement secondaire. */
+      .roi-field-hybrid input[type="number"] {
+        font-size: 1.3rem; font-weight: 800; color: var(--brand-dark); padding: 12px 14px;
+      }
+      .roi-derived { font-size: 0.84rem; color: var(--muted); }
+      .roi-derived strong { color: var(--brand-dark); font-weight: 700; }
+      .roi-field-hybrid input[type="range"] { margin-top: 2px; opacity: 0.85; }
+
+      .roi-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+      .roi-chip {
+        border: 1px solid var(--line); background: #faf6ec; color: var(--text); border-radius: 999px;
+        padding: 6px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease;
+      }
+      .roi-chip:hover { border-color: var(--brand); color: var(--brand-dark); }
+      .roi-chip.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+      .roi-result-hero {
+        background: #faf6ec; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-bottom: 14px;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+      .roi-result-hero .label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+      .roi-result-hero .value { font-size: 1.9rem; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--brand-dark); }
+      .roi-result-hero .sub { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+      .roi-result-hero .roi-hint { font-size: 0.74rem; color: var(--muted); margin-top: 2px; font-style: italic; }
+      .roi-result-hero.positive .value { color: var(--success); }
+      .roi-result-hero.negative .value { color: var(--danger); }
+
+      .roi-kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+      @media (max-width: 420px) { .roi-kpi-grid { grid-template-columns: 1fr; } }
+      .roi-kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+      .roi-kpi .label { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+      .roi-kpi .value { font-size: 1.15rem; font-weight: 800; color: var(--text); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+      .roi-recap {
+        background: var(--brand-soft); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+        font-size: 0.88rem; color: var(--text); margin-bottom: 16px;
+      }
+      .roi-recap strong { color: var(--brand-dark); }
+
+      .roi-empty-cost {
+        background: #fff7e8; border: 1px solid #f0dca8; border-radius: 12px; padding: 16px; color: var(--warning);
+        font-weight: 600; font-size: 0.92rem; text-align: center;
+      }
+
+      .roi-disclaimer { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 18px; text-align: center; }
+
+      .roi-footer-actions { display: flex; justify-content: center; margin-top: 22px; }
+      .roi-reset-btn {
+        border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 999px;
+        padding: 8px 16px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;
+      }
+      .roi-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+      .roi-copyright { text-align: center; font-size: 0.76rem; color: var(--muted); opacity: 0.85; margin-top: 26px; }
+
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div class="roi-shell">
+      <div class="roi-header">
+        <img class="roi-logo" src="/logo-light-bg.png" alt="Bluewaive" />
+        <div class="roi-header-main">
+          <span class="roi-private-tag">Outil interne - usage RDV uniquement</span>
+          <h1>Simulateur ROI Bluewaive</h1>
+          <p>Non lié au portail client. À utiliser en direct pendant vos rendez-vous R1/R2.</p>
+        </div>
+      </div>
+
+      <div class="roi-tabs" role="tablist">
+        <button type="button" class="roi-tab active" id="tab-r1" onclick="ROI.setMode('r1')">
+          <strong>Étape 1</strong>Simulation R1
+        </button>
+        <button type="button" class="roi-tab" id="tab-r2" onclick="ROI.setMode('r2')">
+          <strong>Étape 2</strong>Business Case R2
+        </button>
+      </div>
+
+      <div class="roi-layout">
+        <!-- Colonne parametres (gauche sur desktop, en haut sur mobile/tablette) -->
+        <div class="roi-col-inputs">
+          <!-- Hypothèses R1 : toujours visibles, réutilisées telles quelles en R2 -->
+          <div class="section-block">
+            <div class="section-title">Vos hypothèses</div>
+            <div class="roi-field">
+              <label>Appels entrants par mois <span class="roi-val" id="v-appels">80</span></label>
+              <input type="range" id="appels" min="0" max="300" step="5" value="80" oninput="ROI.onEntrantsChange()" />
+            </div>
+            <div class="roi-field roi-field-hybrid">
+              <label for="appelsManques">Appels manqués ou rappelés trop tard / mois</label>
+              <input type="number" id="appelsManques" min="0" step="1" value="16" oninput="ROI.onAppelsManquesChange()" />
+              <div class="roi-derived" id="v-tauxManquePercent">Soit 20 % des appels entrants</div>
+              <input type="range" id="tauxManque" min="0" max="100" step="1" value="20" aria-label="Pourcentage d'appels manqués par rapport aux appels entrants" oninput="ROI.onTauxManqueSliderChange()" />
+            </div>
+            <div class="roi-field">
+              <label>Parmi ces appels, combien concernent un vrai projet immobilier ? <span class="roi-val" id="v-tauxOpportunite">30 %</span></label>
+              <input type="range" id="tauxOpportunite" min="0" max="100" step="1" value="30" oninput="ROI.calc()" />
+              <div class="roi-derived">Achat, vente, estimation ou autre projet concret.</div>
+            </div>
+            <div class="roi-field">
+              <label>Parmi ces projets, combien aboutissent généralement à une vente ? <span class="roi-val" id="v-tauxConv">15 %</span></label>
+              <input type="range" id="tauxConv" min="0" max="100" step="1" value="15" oninput="ROI.calc()" />
+            </div>
+            <div class="roi-field">
+              <label>Honoraires moyens générés par une vente (€)</label>
+              <input type="number" id="valeurTransaction" min="0" step="100" value="7500" oninput="ROI.calc()" />
+              <div class="roi-chips">
+                <button type="button" class="roi-chip" data-preset-valeur="5000" onclick="ROI.applyValeurPreset(5000)">Prudent - 5 000 €</button>
+                <button type="button" class="roi-chip active" data-preset-valeur="7500" onclick="ROI.applyValeurPreset(7500)">Référence - 7 500 €</button>
+                <button type="button" class="roi-chip" data-preset-valeur="10000" onclick="ROI.applyValeurPreset(10000)">Élevé - 10 000 €</button>
+              </div>
+              <div class="roi-derived">Montant moyen des honoraires perçus par l'agence lorsqu'une vente aboutit.</div>
+            </div>
+          </div>
+
+          <!-- Parametres R2 : recuperation + cout Bluewaive, uniquement en mode R2 -->
+          <div class="section-block" id="panel-r2-inputs" hidden>
+            <div class="section-title">Ajustez pour Bluewaive</div>
+            <div class="roi-recap">
+              Repris du diagnostic R1 : <strong id="recap-valeur">0 €</strong> de valeur potentielle des ventes non captées par mois.
+            </div>
+            <div class="roi-field">
+              <label>Parmi les opportunités perdues, combien Bluewaive pourrait vous aider à récupérer ? <span class="roi-val" id="v-tauxRecuperation">40 %</span></label>
+              <input type="range" id="tauxRecuperation" min="0" max="95" step="1" value="40" oninput="ROI.calc()" />
+              <div class="roi-chips">
+                <button type="button" class="roi-chip active" data-preset-recup="40" onclick="ROI.applyRecupPreset(40)">Conservateur - 40 %</button>
+                <button type="button" class="roi-chip" data-preset-recup="60" onclick="ROI.applyRecupPreset(60)">Réaliste - 60 %</button>
+                <button type="button" class="roi-chip" data-preset-recup="80" onclick="ROI.applyRecupPreset(80)">Optimiste - 80 %</button>
+              </div>
+              <div class="roi-derived">Estimation prudente du potentiel récupérable grâce à une réponse immédiate et à la qualification des appels.</div>
+            </div>
+            <div class="roi-field">
+              <label>Investissement mensuel Bluewaive (€)</label>
+              <input type="number" id="coutMensuel" min="0" step="10" placeholder="Non renseigné" oninput="ROI.calc()" />
+              <div class="roi-derived">Montant mensuel de la solution utilisée pour calculer le retour sur investissement.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colonne resultats (droite sur desktop, en dessous sur mobile/tablette) -->
+        <div class="roi-col-results">
+          <!-- Résultats R1 : diagnostic neutre, jamais de prix Bluewaive -->
+          <div class="section-block" id="panel-r1">
+            <div class="section-title">Ce que révèle le diagnostic</div>
+            <div class="roi-result-hero" id="hero-r1">
+              <div class="label">Valeur potentielle des ventes non captées / mois</div>
+              <div class="value" id="r1-valeurMensuelle">0 €</div>
+              <div class="sub" id="r1-valeurAnnuelle">0 € / an</div>
+            </div>
+            <div class="roi-kpi-grid">
+              <div class="roi-kpi">
+                <div class="label">Appels potentiellement manqués / mois</div>
+                <div class="value" id="r1-appelsPerdus">0</div>
+              </div>
+              <div class="roi-kpi">
+                <div class="label">Projets clients potentiellement concernés</div>
+                <div class="value" id="r1-opportunites">0</div>
+              </div>
+              <div class="roi-kpi">
+                <div class="label">Ventes potentiellement perdues</div>
+                <div class="value" id="r1-transactions">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Business case R2 : reprend R1, ajoute recuperation + cout Bluewaive -->
+          <div class="section-block" id="panel-r2" hidden>
+            <div class="section-title">Votre Business Case</div>
+
+            <div id="r2-empty" class="roi-empty-cost">
+              Renseignez l'investissement mensuel de la solution pour calculer le ROI.
+            </div>
+
+            <div id="r2-results" hidden>
+              <div class="roi-result-hero" id="hero-r2">
+                <div class="label">📈 ROI indicatif</div>
+                <div class="roi-hint">Retour sur investissement estimé</div>
+                <div class="value" id="r2-roi">-</div>
+                <div class="sub" id="r2-roiPercent"></div>
+              </div>
+              <div class="roi-kpi-grid">
+                <div class="roi-kpi">
+                  <div class="label">🎯 Projets clients potentiellement récupérés</div>
+                  <div class="value" id="r2-opportunitesRecuperables">0</div>
+                </div>
+                <div class="roi-kpi">
+                  <div class="label">💶 Valeur potentielle récupérée / mois</div>
+                  <div class="value" id="r2-valeurRecuperable">0 €</div>
+                </div>
+                <div class="roi-kpi">
+                  <div class="label">💰 Valeur nette estimée après coût Bluewaive / mois</div>
+                  <div class="value" id="r2-gainNet">0 €</div>
+                </div>
+                <div class="roi-kpi">
+                  <div class="label">Valeur nette estimée après coût Bluewaive / an</div>
+                  <div class="value" id="r2-gainAnnuel">0 €</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="roi-disclaimer">
+        Simulation indicative basée sur les informations et hypothèses renseignées. Les résultats sont estimatifs et
+        ne constituent ni une garantie de chiffre d'affaires ni une garantie de performance.
+      </p>
+
+      <div class="roi-footer-actions">
+        <button type="button" class="roi-reset-btn" onclick="ROI.reset()">Réinitialiser</button>
+      </div>
+
+      <p class="roi-copyright">© 2026 Bluewaive - Tous droits réservés</p>
+    </div>
+
+    <script src="/scripts/roi-simulator.js"></script>
+  </body>
+</html>
