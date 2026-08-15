@@ -102,7 +102,7 @@ const RESOURCE_CARDS = [
     description: 'Découvrez les principales fonctionnalités de votre espace client Bluewaive.',
     buttonLabel: 'Consulter le guide',
     icon: ICON_RESSOURCES,
-    accent: 'resource-accent-blue'
+    accent: 'resource-accent-violet'
   },
   {
     key: 'tutoriels',
@@ -110,7 +110,7 @@ const RESOURCE_CARDS = [
     description: 'Retrouvez les étapes pour effectuer les actions courantes dans votre portail.',
     buttonLabel: 'Voir les tutoriels',
     icon: ICON_TUTORIELS,
-    accent: 'resource-accent-gold'
+    accent: 'resource-accent-violet'
   },
   {
     key: 'faq',
@@ -118,7 +118,7 @@ const RESOURCE_CARDS = [
     description: 'Les réponses aux questions les plus fréquentes sur Bluewaive Voice OS.',
     buttonLabel: 'Consulter la FAQ',
     icon: ICON_FAQ,
-    accent: 'resource-accent-green'
+    accent: 'resource-accent-violet'
   },
   {
     key: 'documentation',
@@ -126,7 +126,7 @@ const RESOURCE_CARDS = [
     description: 'Comprenez le fonctionnement du portail et les principales fonctionnalités du service.',
     buttonLabel: 'Ouvrir la documentation',
     icon: ICON_DEVIS,
-    accent: 'resource-accent-dark'
+    accent: 'resource-accent-violet'
   },
   {
     key: 'guideAgentVocal',
@@ -134,7 +134,7 @@ const RESOURCE_CARDS = [
     description: 'Comprenez le rôle de votre agent vocal et la manière d’exploiter les informations collectées.',
     buttonLabel: 'Consulter le guide',
     icon: ICON_AGENT_VOCAL,
-    accent: 'resource-accent-cyan'
+    accent: 'resource-accent-violet'
   },
   {
     key: 'procedures',
@@ -142,7 +142,7 @@ const RESOURCE_CARDS = [
     description: 'Les bons réflexes opérationnels pour utiliser Bluewaive au quotidien.',
     buttonLabel: 'Voir les procédures',
     icon: ICON_PROCEDURES,
-    accent: 'resource-accent-ocre'
+    accent: 'resource-accent-violet'
   },
   {
     key: 'formation',
@@ -150,7 +150,7 @@ const RESOURCE_CARDS = [
     description: 'Support de formation destiné aux équipes pour la prise en main de Bluewaive.',
     buttonLabel: 'Ouvrir le support',
     icon: ICON_FORMATION,
-    accent: 'resource-accent-purple'
+    accent: 'resource-accent-violet'
   },
   {
     key: 'sopAgentVocal',
@@ -158,7 +158,7 @@ const RESOURCE_CARDS = [
     description: 'Découvrez comment votre agent vocal prend en charge un appel, qualifie la demande et transmet les informations utiles à votre agence.',
     buttonLabel: 'Voir le fonctionnement',
     icon: ICON_SOP_AGENT_VOCAL,
-    accent: 'resource-accent-cyan'
+    accent: 'resource-accent-violet'
   }
 ];
 
@@ -538,6 +538,12 @@ function renderClientData(payload, rootSelector) {
 
   if (rootSelector === '#overview-root') {
     const agency = payload.agency;
+    // Widget WebCall (declenchement d'un vrai appel test) reserve aux comptes
+    // "Role Portail" = Admin - `payload.role` vient exclusivement de la session
+    // signee cote serveur (voir lib/app.js), jamais d'une valeur du navigateur.
+    // Pour un client standard, le composant n'est pas construit dans le DOM
+    // (pas juste masque en CSS), et initWebCallWidget() n'est jamais appele.
+    const isAdmin = payload.role === 'admin';
     const agencyInitial = (agency.nomAgence || 'A').trim().charAt(0).toUpperCase() || 'A';
     root.innerHTML = `
       <section class="hero-banner" style="background-image: url('/estacade-saint-jean-de-monts.jpg')">
@@ -557,13 +563,14 @@ function renderClientData(payload, rootSelector) {
             <h3>${agency.agentVocal ? escapeHtml(agency.agentVocal) : 'Assistante vocale'}</h3>
             <p>Assistante vocale de ${agency.nomAgencePublic || agency.nomAgence || 'votre agence'}</p>
           </div>
+          ${isAdmin ? `
           <div class="webcall-widget" id="webcall-widget">
             <button type="button" class="webcall-btn" id="webcall-btn" aria-label="${escapeHtml(agency.agentVocal ? `Parler avec ${agency.agentVocal}` : "Parler avec l'assistant vocal")}">
               <img src="/icone-web-call.png" alt="" class="webcall-btn-icon-img">
             </button>
             <div class="webcall-status" id="webcall-status" aria-live="polite"></div>
             <button type="button" class="webcall-unmute-btn" id="webcall-unmute-btn" hidden>Activer le son</button>
-          </div>
+          </div>` : ''}
         </div>
       </section>
       <section class="section-block">
@@ -613,7 +620,7 @@ function renderClientData(payload, rootSelector) {
         </div>
       </section>
     `;
-    initWebCallWidget(agency.id, agency.agentVocal || '');
+    if (isAdmin) initWebCallWidget(agency.id, agency.agentVocal || '');
     return;
   }
 
