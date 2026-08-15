@@ -289,9 +289,24 @@ a { color: var(--brand); text-decoration: none; }
 .webcall-unmute-btn:active { transform: scale(0.96); }
 .webcall-unmute-btn:focus-visible { outline: 2px solid rgba(38, 130, 180, 0.5); outline-offset: 2px; }
 .webcall-unmute-btn[hidden] { display: none; }
+/* Selecteur "Agence à tester" (widget admin uniquement, OPTION A/C - voir
+   CLAUDE.md). `flex-basis: 100%` dans le flex-wrap deja existant de .webcall-widget
+   suffit a le pousser sur sa propre ligne au-dessus du bouton d'appel, sans
+   modifier .webcall-widget lui-meme. */
+.webcall-admin-target { flex-basis: 100%; align-self: stretch; display: flex; flex-direction: column; gap: 4px; }
+.webcall-admin-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.webcall-admin-select {
+  padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.92rem;
+  font-family: inherit; color: var(--text); background: #fffdf7; max-width: 320px;
+}
+.webcall-admin-select:disabled { opacity: 0.6; cursor: not-allowed; }
+.webcall-admin-select:focus { outline: none; border-color: var(--agent-vocal); }
+.webcall-admin-note { margin: 0; font-size: 0.78rem; color: var(--muted); font-style: italic; }
 @media (max-width: 480px) {
   .webcall-widget { flex-direction: column; align-items: center; gap: 12px; }
   .webcall-btn-icon-img { width: 86px; }
+  .webcall-admin-target { align-items: stretch; }
+  .webcall-admin-select { max-width: none; width: 100%; }
 }
 .section-block { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px 22px; margin-bottom: 18px; box-shadow: var(--shadow); }
 .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.01em; }

@@ -565,7 +565,14 @@ function renderClientData(payload, rootSelector) {
           </div>
           ${isAdmin ? `
           <div class="webcall-widget" id="webcall-widget">
-            <button type="button" class="webcall-btn" id="webcall-btn" aria-label="${escapeHtml(agency.agentVocal ? `Parler avec ${agency.agentVocal}` : "Parler avec l'assistant vocal")}">
+            <div class="webcall-admin-target">
+              <label for="webcallTargetSelect" class="webcall-admin-label">Agence à tester</label>
+              <select id="webcallTargetSelect" class="webcall-admin-select" disabled>
+                <option value="">Chargement…</option>
+              </select>
+              <p class="webcall-admin-note">Test interne Bluewaive - configuration de l'agence sélectionnée</p>
+            </div>
+            <button type="button" class="webcall-btn" id="webcall-btn" disabled aria-label="Parler avec l'assistant vocal">
               <img src="/icone-web-call.png" alt="" class="webcall-btn-icon-img">
             </button>
             <div class="webcall-status" id="webcall-status" aria-live="polite"></div>
@@ -620,7 +627,7 @@ function renderClientData(payload, rootSelector) {
         </div>
       </section>
     `;
-    if (isAdmin) initWebCallWidget(agency.id, agency.agentVocal || '');
+    if (isAdmin) initWebCallWidget(agency.id);
     return;
   }
 
@@ -1167,20 +1174,68 @@ function loadRetellWebClientClass() {
   return retellWebClientClassPromise;
 }
 
-// `agentName` est affiche uniquement via textContent (jamais reinjecte en innerHTML) -
-// aucun echappement HTML necessaire ici, contrairement au rendu initial du bouton.
-function initWebCallWidget(agencyId, agentName) {
+// Widget reserve au role admin (voir renderClientData #overview-root) : `agencyId`
+// est l'agence de la session (equipe Bluewaive), jamais l'agence testee. L'admin
+// choisit explicitement, via le selecteur "Agence à tester" rempli ci-dessous,
+// quelle agence CLIENTE deja configuree tester (OPTION A/C) - aucun agent_id n'est
+// jamais manipule cote frontend, uniquement un `targetAgencyId` (identifiant
+// d'agence, meme nature que l'`agencyId` deja public partout ailleurs dans l'app).
+function initWebCallWidget(agencyId) {
   const widget = document.querySelector('#webcall-widget');
   if (!widget) return;
   const button = widget.querySelector('#webcall-btn');
   const statusEl = widget.querySelector('#webcall-status');
   const unmuteBtn = widget.querySelector('#webcall-unmute-btn');
+  const targetSelect = widget.querySelector('#webcallTargetSelect');
   // Bouton icone seule (pas de texte visible) : le nom de l'action vit uniquement dans
   // l'aria-label, mis a jour a chaque changement d'etat pour rester correct au clavier/lecteur
   // d'ecran (le contexte "qui" est deja donne visuellement par la carte au-dessus du bouton).
-  const readyLabel = agentName ? `Parler avec ${agentName}` : "Parler avec l'assistant vocal";
+  // Recalcules a chaque selection (voir updateLabelsForSelection) - pas d'agence fixe.
+  let readyLabel = "Parler avec l'assistant vocal";
   const connectingLabel = 'Connexion en cours';
-  const hangupLabel = agentName ? `Raccrocher l'appel avec ${agentName}` : "Raccrocher l'appel";
+  let hangupLabel = "Raccrocher l'appel";
+
+  function hasValidTarget() {
+    return Boolean(targetSelect && targetSelect.value);
+  }
+
+  function updateLabelsForSelection() {
+    const option = targetSelect.options[targetSelect.selectedIndex];
+    const agentName = option ? option.dataset.agentName || '' : '';
+    readyLabel = agentName ? `Parler avec ${agentName}` : "Parler avec l'assistant vocal";
+    hangupLabel = agentName ? `Raccrocher l'appel avec ${agentName}` : "Raccrocher l'appel";
+    if (state === 'idle' || state === 'ended' || state === 'error') {
+      button.setAttribute('aria-label', readyLabel);
+    }
+  }
+
+  // Liste des agences deja configurees avec un Retell Agent ID valide (jamais
+  // l'agent_id lui-meme dans la reponse - voir lib/app.js fetchAdminTestableAgencies).
+  // Le bouton d'appel reste desactive tant qu'aucune selection valide n'est faite,
+  // en miroir du refus controle applique cote serveur sans `targetAgencyId`.
+  fetch(`/client/${agencyId}/api/admin-testable-agencies`)
+    .then((response) => (response.ok ? response.json() : Promise.reject(new Error('load failed'))))
+    .then((data) => {
+      const agencies = Array.isArray(data.agencies) ? data.agencies : [];
+      if (!agencies.length) {
+        targetSelect.innerHTML = '<option value="">Aucune agence disponible</option>';
+        return;
+      }
+      targetSelect.innerHTML = '<option value="">Choisir une agence…</option>' + agencies.map((entry) =>
+        `<option value="${escapeHtml(entry.agencyId)}" data-agent-name="${escapeHtml(entry.agentVocal || '')}">${escapeHtml(entry.label)}</option>`
+      ).join('');
+      targetSelect.disabled = false;
+    })
+    .catch(() => {
+      targetSelect.innerHTML = '<option value="">Liste indisponible</option>';
+    });
+
+  targetSelect.addEventListener('change', () => {
+    updateLabelsForSelection();
+    if (state === 'idle' || state === 'ended' || state === 'error') {
+      button.disabled = !hasValidTarget();
+    }
+  });
 
   let state = 'idle'; // idle | connecting | active | ended | error
   // Efface automatiquement la confirmation "Appel terminé." apres un court delai pour
@@ -1250,7 +1305,7 @@ function initWebCallWidget(agencyId, agentName) {
     clearEndedStatusTimer();
     hideUnmuteControl();
     state = 'idle';
-    button.disabled = false;
+    button.disabled = !hasValidTarget();
     button.setAttribute('aria-label', readyLabel);
     button.classList.remove('webcall-btn-hangup', 'webcall-btn-connecting');
     setStatus('', '');
@@ -1282,7 +1337,7 @@ function initWebCallWidget(agencyId, agentName) {
     clearEndedStatusTimer();
     hideUnmuteControl();
     state = 'ended';
-    button.disabled = false;
+    button.disabled = !hasValidTarget();
     button.setAttribute('aria-label', readyLabel);
     button.classList.remove('webcall-btn-hangup', 'webcall-btn-connecting');
     setStatus('Appel terminé.', 'ended');
@@ -1298,18 +1353,30 @@ function initWebCallWidget(agencyId, agentName) {
     clearEndedStatusTimer();
     hideUnmuteControl();
     state = 'error';
-    button.disabled = false;
+    button.disabled = !hasValidTarget();
     button.setAttribute('aria-label', readyLabel);
     button.classList.remove('webcall-btn-hangup', 'webcall-btn-connecting');
     setStatus(message, 'error');
   }
 
   async function startFlow() {
+    // Garde cote client (aucun appel reseau si aucune agence n'est selectionnee) -
+    // en miroir du refus controle (400) que le serveur appliquerait de toute facon
+    // si `targetAgencyId` etait absent du corps de la requete.
+    if (!hasValidTarget()) {
+      setError('Veuillez sélectionner une agence à tester.');
+      return;
+    }
+    const targetAgencyId = targetSelect.value;
     setConnecting();
 
     let response;
     try {
-      response = await fetch(`/client/${agencyId}/api/create-web-call`, { method: 'POST' });
+      response = await fetch(`/client/${agencyId}/api/create-web-call`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetAgencyId })
+      });
     } catch (networkError) {
       setError('Erreur réseau. Vérifiez votre connexion et réessayez.');
       return;
