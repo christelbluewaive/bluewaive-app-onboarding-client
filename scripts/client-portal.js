@@ -629,6 +629,12 @@ function renderClientData(payload, rootSelector) {
           </div>
         </div>
       </section>
+      ${isAdmin ? `
+      <section class="section-block">
+        <div class="section-title">Vue d'ensemble Bluewaive</div>
+        <div class="kpis" id="admin-global-kpis"><div class="meta">Chargement…</div></div>
+      </section>
+      ` : ''}
       ${isAdmin ? '' : `
       <section class="section-block">
         <div class="section-title">Vue d'ensemble</div>
@@ -668,6 +674,7 @@ function renderClientData(payload, rootSelector) {
       </section>
     `;
     if (isAdmin) initWebCallWidget(agency.agentVocal);
+    if (isAdmin) loadAdminGlobalKpis(agencyId);
     return;
   }
 
@@ -1243,6 +1250,37 @@ function renderClientData(payload, rootSelector) {
       });
     });
     return;
+  }
+}
+
+// KPI globaux Admin (etape 5A) - "Vue d'ensemble Bluewaive" du Dashboard Admin.
+// Meme source que la page Clients (admin-clients, deja creee etape 1) : aucun
+// nouvel endpoint, aucun deuxieme acces Airtable, aucune deuxieme logique de
+// filtrage - seul un comptage cote client sur le meme tableau `clients` deja
+// utilise par renderClientCard. Fetch volontairement SANS targetAgencyId : la
+// route admin-clients renvoie toujours la liste globale quel que soit le
+// parametre (voir lib/app.js), ces KPI sont donc structurellement independants
+// de l'agence consultee - jamais recalcules/varies selon Joyce/La Plage/etc.
+// Echec = jamais un faux "0" (voir catch) : la section KPI affiche un message
+// neutre, le reste du Dashboard (deja rendu avant cet appel) reste utilisable.
+async function loadAdminGlobalKpis(agencyId) {
+  const el = document.querySelector('#admin-global-kpis');
+  if (!el) return;
+  try {
+    const response = await fetch(`/client/${agencyId}/api/admin-clients`);
+    if (!response.ok) throw new Error('admin-clients indisponible');
+    const payload = await response.json();
+    const clients = Array.isArray(payload.clients) ? payload.clients : [];
+    const total = clients.length;
+    const voiceOsCount = clients.filter((c) => c.voiceOsActif).length;
+    const onboardingCount = clients.filter((c) => c.accesOnboarding).length;
+    el.innerHTML = `
+      <div class="kpi"><strong>${total}</strong><span>clients</span></div>
+      <div class="kpi"><strong>${voiceOsCount}</strong><span>voice os actif</span></div>
+      <div class="kpi"><strong>${onboardingCount}</strong><span>onboarding actif</span></div>
+    `;
+  } catch (error) {
+    el.innerHTML = '<div class="meta">KPI indisponibles pour le moment.</div>';
   }
 }
 
