@@ -57,6 +57,56 @@
         outline: none;
         border-color: #2682B4;
       }
+      /* Bascule visibilite du mot de passe (login uniquement) : purement visuelle,
+         ne touche jamais la valeur du champ - seul l'attribut type() bascule entre
+         password/text au clic. */
+      .password-field {
+        position: relative;
+        display: flex;
+      }
+      .password-field input {
+        flex: 1;
+        padding-right: 44px;
+      }
+      /* Specificite renforcee (.login-form button.password-toggle) : la regle
+         generique ".login-form button" plus bas (fond degrade, texte blanc, du
+         bouton "Se connecter") ne doit jamais s'appliquer a ce bouton-ci. */
+      .login-form button.password-toggle {
+        position: absolute;
+        top: 50%;
+        right: 4px;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 0;
+      }
+      .login-form button.password-toggle:hover {
+        background: rgba(0, 0, 0, 0.06);
+        opacity: 1;
+      }
+      .login-form button.password-toggle:focus-visible {
+        outline: 2px solid #2682B4;
+        outline-offset: 2px;
+      }
+      .password-toggle::before {
+        content: '';
+        width: 20px;
+        height: 20px;
+        background-color: #666;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center / contain no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center / contain no-repeat;
+      }
+      .password-toggle[aria-pressed="true"]::before {
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'/%3E%3Cpath d='M6.61 6.61C3.16 8.65 1 12 1 12s4 8 11 8a9.26 9.26 0 0 0 5.39-1.61'/%3E%3Cline x1='1' y1='1' x2='23' y2='23'/%3E%3C/svg%3E");
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'/%3E%3Cpath d='M6.61 6.61C3.16 8.65 1 12 1 12s4 8 11 8a9.26 9.26 0 0 0 5.39-1.61'/%3E%3Cline x1='1' y1='1' x2='23' y2='23'/%3E%3C/svg%3E");
+      }
       .login-form button {
         padding: 12px 16px;
         background: linear-gradient(135deg, #2682B4 0%, #1a5c8d 100%);
@@ -169,13 +219,22 @@
 
           <div class="form-group">
             <label for="password">Mot de passe</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="••••••••"
-              required
-            />
+            <div class="password-field">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                id="passwordToggle"
+                aria-label="Afficher le mot de passe"
+                aria-pressed="false"
+              ></button>
+            </div>
           </div>
 
           <div class="checkbox-row">
@@ -197,6 +256,23 @@
       document.addEventListener('DOMContentLoaded', () => {
         const emailInput = document.getElementById('email');
         const rememberCheckbox = document.getElementById('rememberEmail');
+        const passwordInput = document.getElementById('password');
+        const passwordToggle = document.getElementById('passwordToggle');
+
+        // Bascule masque/visible : ne touche jamais passwordInput.value, uniquement
+        // son attribut type - le mot de passe saisi reste strictement identique.
+        // mousedown + preventDefault empeche le clic de voler le focus/la position du
+        // curseur du champ avant que le toggle n'ait lieu (le focus reste sur le champ).
+        if (passwordInput && passwordToggle) {
+          passwordToggle.addEventListener('mousedown', (event) => event.preventDefault());
+          passwordToggle.addEventListener('click', () => {
+            const willShow = passwordInput.type === 'password';
+            passwordInput.type = willShow ? 'text' : 'password';
+            passwordToggle.setAttribute('aria-pressed', String(willShow));
+            passwordToggle.setAttribute('aria-label', willShow ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+            passwordInput.focus();
+          });
+        }
 
         // Prefill : uniquement l'adresse e-mail, jamais le mot de passe.
         const rememberedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
