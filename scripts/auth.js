@@ -5,6 +5,11 @@ async function logout() {
     // ignore network errors, still clear local state and redirect
   }
   localStorage.removeItem('userEmail');
+  // Console Admin (etape 3) : efface le contexte "agence consultee" (sessionStorage,
+  // cles definies dans scripts/client-portal.js) pour qu'un nouveau compte connecte
+  // dans le meme onglet ne recupere jamais l'agence choisie par la session precedente.
+  sessionStorage.removeItem('bw_admin_target_agency_id');
+  sessionStorage.removeItem('bw_admin_target_agency_name');
   window.location.href = '/login';
 }
 

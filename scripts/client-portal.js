@@ -539,9 +539,19 @@ function initAccountMediaUpload(agencyId, { target, fileInputId, buttonId, previ
 
 async function loadClientData(endpoint, rootSelector) {
   const agencyId = getAgencyIdFromUrl();
-  const response = await fetch(`/client/${agencyId}/api/${endpoint}`);
+  // Console Admin (etape 3) : ?targetAgencyId=... ajoute uniquement si une agence
+  // est deja selectionnee en sessionStorage (jamais ecrit pour un client normal -
+  // voir renderAdminAgencyBanner). Le serveur revalide integralement ce parametre
+  // et l'ignore de toute facon pour tout compte non-admin (resolveEffectiveAgencyId,
+  // lib/app.js) - aucune confiance necessaire cote client.
+  const targetAgencyId = getStoredTargetAgencyId();
+  const query = targetAgencyId ? `?targetAgencyId=${encodeURIComponent(targetAgencyId)}` : '';
+  const response = await fetch(`/client/${agencyId}/api/${endpoint}${query}`);
   if (!response.ok) throw new Error('Impossible de charger les donnees client');
   const payload = await response.json();
+  // `role` vient de la reponse serveur deja verifiee (jamais devine cote client) -
+  // seul signal utilise pour decider d'injecter le bandeau Admin.
+  if (payload.role === 'admin') renderAdminAgencyBanner(agencyId);
   renderClientData(payload, rootSelector);
 }
 
@@ -579,11 +589,7 @@ function renderClientData(payload, rootSelector) {
           ${isAdmin ? `
           <div class="webcall-widget" id="webcall-widget">
             <div class="webcall-admin-target">
-              <label for="webcallTargetSelect" class="webcall-admin-label">Agence à tester</label>
-              <select id="webcallTargetSelect" class="webcall-admin-select" disabled>
-                <option value="">Chargement…</option>
-              </select>
-              <p class="webcall-admin-note">Test interne Bluewaive - configuration de l'agence sélectionnée</p>
+              <p class="webcall-admin-note" id="webcall-admin-note">Chargement…</p>
             </div>
             <button type="button" class="webcall-btn" id="webcall-btn" disabled aria-label="Parler avec l'assistant vocal">
               <img src="/icone-web-call.png" alt="" class="webcall-btn-icon-img">
@@ -640,7 +646,7 @@ function renderClientData(payload, rootSelector) {
         </div>
       </section>
     `;
-    if (isAdmin) initWebCallWidget(agency.id);
+    if (isAdmin) initWebCallWidget(agency.agentVocal);
     return;
   }
 
@@ -1206,68 +1212,51 @@ function loadRetellWebClientClass() {
   return retellWebClientClassPromise;
 }
 
-// Widget reserve au role admin (voir renderClientData #overview-root) : `agencyId`
-// est l'agence de la session (equipe Bluewaive), jamais l'agence testee. L'admin
-// choisit explicitement, via le selecteur "Agence à tester" rempli ci-dessous,
-// quelle agence CLIENTE deja configuree tester (OPTION A/C) - aucun agent_id n'est
-// jamais manipule cote frontend, uniquement un `targetAgencyId` (identifiant
-// d'agence, meme nature que l'`agencyId` deja public partout ailleurs dans l'app).
-function initWebCallWidget(agencyId) {
+// Widget reserve au role admin (voir renderClientData #overview-root). L'agence a
+// appeler est desormais TOUJOURS celle deja selectionnee via le bandeau "Agence
+// consultee" (sessionStorage, meme cle que renderAdminAgencyBanner) - plus de
+// selecteur interne redondant. Correctif (etape "WebCall en contexte Admin") :
+// l'ancienne version construisait ses propres appels serveur avec l'ID de l'agence
+// AFFICHEE (agency.id) au lieu de l'ID reel de session/URL, ce qui provoquait un 401
+// systematique des qu'une agence cliente etait consultee - `getAgencyIdFromUrl()`
+// est desormais utilise pour l'URL, jamais l'agence ciblee. Jamais BLUEWAIVE ni
+// aucune autre agence par defaut : `targetAgencyId` vide -> bouton desactive, aucun
+// appel reseau declenche. Aucun agent_id n'est jamais manipule cote frontend,
+// uniquement le `targetAgencyId` (identifiant d'agence, meme nature que
+// l'`agencyId` deja public partout ailleurs dans l'app) - revalide integralement
+// cote serveur (create-web-call) avant tout usage.
+function initWebCallWidget(agentVocalName) {
   const widget = document.querySelector('#webcall-widget');
   if (!widget) return;
   const button = widget.querySelector('#webcall-btn');
   const statusEl = widget.querySelector('#webcall-status');
   const unmuteBtn = widget.querySelector('#webcall-unmute-btn');
-  const targetSelect = widget.querySelector('#webcallTargetSelect');
-  // Bouton icone seule (pas de texte visible) : le nom de l'action vit uniquement dans
-  // l'aria-label, mis a jour a chaque changement d'etat pour rester correct au clavier/lecteur
-  // d'ecran (le contexte "qui" est deja donne visuellement par la carte au-dessus du bouton).
-  // Recalcules a chaque selection (voir updateLabelsForSelection) - pas d'agence fixe.
-  let readyLabel = "Parler avec l'assistant vocal";
-  const connectingLabel = 'Connexion en cours';
-  let hangupLabel = "Raccrocher l'appel";
+  const noteEl = widget.querySelector('#webcall-admin-note');
+
+  // Source unique de verite pour "quelle agence tester" : le bandeau "Agence
+  // consultee" (sessionStorage), fige au chargement de la page - un changement
+  // d'agence recharge toujours la page entiere (voir renderAdminAgencyBanner),
+  // donc pas besoin de re-synchroniser cette valeur en cours de vie du widget.
+  const targetAgencyId = getStoredTargetAgencyId();
 
   function hasValidTarget() {
-    return Boolean(targetSelect && targetSelect.value);
+    return Boolean(targetAgencyId);
   }
 
-  function updateLabelsForSelection() {
-    const option = targetSelect.options[targetSelect.selectedIndex];
-    const agentName = option ? option.dataset.agentName || '' : '';
-    readyLabel = agentName ? `Parler avec ${agentName}` : "Parler avec l'assistant vocal";
-    hangupLabel = agentName ? `Raccrocher l'appel avec ${agentName}` : "Raccrocher l'appel";
-    if (state === 'idle' || state === 'ended' || state === 'error') {
-      button.setAttribute('aria-label', readyLabel);
-    }
+  // Bouton icone seule (pas de texte visible) : le nom de l'action vit uniquement dans
+  // l'aria-label. Calcules une seule fois a l'init (plus de selecteur interne pouvant
+  // changer la cible en cours de vie du widget - un changement d'agence recharge la page).
+  const readyLabel = hasValidTarget() && agentVocalName ? `Parler avec ${agentVocalName}` : "Parler avec l'assistant vocal";
+  const connectingLabel = 'Connexion en cours';
+  const hangupLabel = hasValidTarget() && agentVocalName ? `Raccrocher l'appel avec ${agentVocalName}` : "Raccrocher l'appel";
+
+  if (noteEl) {
+    noteEl.textContent = hasValidTarget()
+      ? `Agence testée : ${sessionStorage.getItem(ADMIN_TARGET_AGENCY_NAME_KEY) || targetAgencyId}`
+      : "Sélectionnez d'abord une agence.";
   }
-
-  // Liste des agences deja configurees avec un Retell Agent ID valide (jamais
-  // l'agent_id lui-meme dans la reponse - voir lib/app.js fetchAdminTestableAgencies).
-  // Le bouton d'appel reste desactive tant qu'aucune selection valide n'est faite,
-  // en miroir du refus controle applique cote serveur sans `targetAgencyId`.
-  fetch(`/client/${agencyId}/api/admin-testable-agencies`)
-    .then((response) => (response.ok ? response.json() : Promise.reject(new Error('load failed'))))
-    .then((data) => {
-      const agencies = Array.isArray(data.agencies) ? data.agencies : [];
-      if (!agencies.length) {
-        targetSelect.innerHTML = '<option value="">Aucune agence disponible</option>';
-        return;
-      }
-      targetSelect.innerHTML = '<option value="">Choisir une agence…</option>' + agencies.map((entry) =>
-        `<option value="${escapeHtml(entry.agencyId)}" data-agent-name="${escapeHtml(entry.agentVocal || '')}">${escapeHtml(entry.label)}</option>`
-      ).join('');
-      targetSelect.disabled = false;
-    })
-    .catch(() => {
-      targetSelect.innerHTML = '<option value="">Liste indisponible</option>';
-    });
-
-  targetSelect.addEventListener('change', () => {
-    updateLabelsForSelection();
-    if (state === 'idle' || state === 'ended' || state === 'error') {
-      button.disabled = !hasValidTarget();
-    }
-  });
+  button.disabled = !hasValidTarget();
+  button.setAttribute('aria-label', readyLabel);
 
   let state = 'idle'; // idle | connecting | active | ended | error
   // Efface automatiquement la confirmation "Appel terminé." apres un court delai pour
@@ -1396,15 +1385,17 @@ function initWebCallWidget(agencyId) {
     // en miroir du refus controle (400) que le serveur appliquerait de toute facon
     // si `targetAgencyId` etait absent du corps de la requete.
     if (!hasValidTarget()) {
-      setError('Veuillez sélectionner une agence à tester.');
+      setError("Sélectionnez d'abord une agence.");
       return;
     }
-    const targetAgencyId = targetSelect.value;
     setConnecting();
 
     let response;
     try {
-      response = await fetch(`/client/${agencyId}/api/create-web-call`, {
+      // URL construite avec l'agence REELLE de session/URL (jamais l'agence ciblee,
+      // voir commentaire en tete de fonction) - `targetAgencyId` (const de tete de
+      // fonction) reste le seul vecteur de l'agence a tester, revalide cote serveur.
+      response = await fetch(`/client/${getAgencyIdFromUrl()}/api/create-web-call`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetAgencyId })
@@ -1498,6 +1489,90 @@ function initWebCallWidget(agencyId) {
   });
 
   setIdle();
+}
+
+// ---- Console Admin (etape 3) : agence consultee, persistee cote navigateur ----
+// sessionStorage (jamais localStorage) : survit a la navigation entre pages et a un
+// rafraichissement dans le meme onglet, disparait naturellement a la fermeture de
+// l'onglet - jamais un secret (uniquement un ID de fiche Airtable + un nom d'agence,
+// meme nature que l'agencyId deja public partout dans l'app). Ces cles ne sont
+// ecrites que par le selecteur du bandeau ci-dessous (jamais pour un client normal),
+// et le serveur revalide de toute facon integralement tout targetAgencyId recu quel
+// que soit le role (resolveEffectiveAgencyId, lib/app.js) - la confiance cote client
+// n'est donc jamais requise pour la securite, uniquement pour l'affichage.
+const ADMIN_TARGET_AGENCY_ID_KEY = 'bw_admin_target_agency_id';
+const ADMIN_TARGET_AGENCY_NAME_KEY = 'bw_admin_target_agency_name';
+
+function getStoredTargetAgencyId() {
+  return sessionStorage.getItem(ADMIN_TARGET_AGENCY_ID_KEY) || '';
+}
+
+function setStoredTargetAgency(id, name) {
+  if (id) {
+    sessionStorage.setItem(ADMIN_TARGET_AGENCY_ID_KEY, id);
+    sessionStorage.setItem(ADMIN_TARGET_AGENCY_NAME_KEY, name || '');
+  } else {
+    // Aucune agence choisie ("Aucune agence sélectionnée") : retire les deux cles,
+    // jamais de valeur vide laissee en place (evite tout residu ambigu).
+    sessionStorage.removeItem(ADMIN_TARGET_AGENCY_ID_KEY);
+    sessionStorage.removeItem(ADMIN_TARGET_AGENCY_NAME_KEY);
+  }
+}
+
+// Bandeau "Agence consultée : ..." + selecteur de changement d'agence - un seul
+// composant partage, injecte par loadClientData() des que le role admin est
+// confirme par le serveur (jamais construit sur la seule foi d'une valeur locale).
+// Idempotent (garde ci-dessous) : sans effet si deja present sur la page. Alimente
+// par la route admin-clients deja creee (etape 1) - aucune nouvelle source de
+// donnees, aucun secret (memes champs deja verifies sans hash/cle/token).
+function renderAdminAgencyBanner(agencyId) {
+  if (document.querySelector('.admin-agency-banner')) return;
+  const shell = document.querySelector('.page-shell');
+  const topbar = document.querySelector('.topbar');
+  if (!shell) return;
+
+  const storedId = getStoredTargetAgencyId();
+  const storedName = sessionStorage.getItem(ADMIN_TARGET_AGENCY_NAME_KEY) || '';
+  const banner = document.createElement('div');
+  banner.className = 'admin-agency-banner';
+  banner.innerHTML = `
+    <span class="admin-agency-banner-label">${storedId
+      ? `Agence consultée : <strong>${escapeHtml(storedName || storedId)}</strong>`
+      : 'Aucune agence sélectionnée'}</span>
+    <select class="admin-agency-banner-select" aria-label="Changer d'agence consultée" disabled>
+      <option value="">Chargement…</option>
+    </select>
+  `;
+  if (topbar && topbar.parentNode === shell) {
+    topbar.insertAdjacentElement('afterend', banner);
+  } else {
+    shell.prepend(banner);
+  }
+
+  const select = banner.querySelector('.admin-agency-banner-select');
+  fetch(`/client/${agencyId}/api/admin-clients`)
+    .then((response) => (response.ok ? response.json() : Promise.reject(new Error('load failed'))))
+    .then((data) => {
+      const clients = Array.isArray(data.clients) ? data.clients : [];
+      const options = ['<option value="">Aucune agence sélectionnée</option>'].concat(
+        clients.map((client) => `<option value="${escapeHtml(client.id)}"${client.id === storedId ? ' selected' : ''}>${escapeHtml(client.nomAgence)}</option>`)
+      );
+      select.innerHTML = options.join('');
+      select.disabled = false;
+    })
+    .catch(() => {
+      select.innerHTML = '<option value="">Liste indisponible</option>';
+    });
+
+  select.addEventListener('change', () => {
+    const chosenId = select.value;
+    const chosenName = chosenId ? select.options[select.selectedIndex].textContent : '';
+    setStoredTargetAgency(chosenId, chosenName);
+    // Rechargement complet de la page courante : garantit qu'aucune donnee
+    // visuelle de l'agence precedente ne subsiste (choix simple et robuste,
+    // pas de redesign/re-rendu partiel a ce stade).
+    window.location.reload();
+  });
 }
 
 // Rend cliquables les cartes de "Dernières activités prospects" qui portent un jeton

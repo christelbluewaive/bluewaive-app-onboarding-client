@@ -91,6 +91,24 @@ a { color: var(--brand); text-decoration: none; }
   .topbar-actions { gap: 6px; row-gap: 8px; }
 }
 
+/* Bandeau "Agence consultee" (Console Admin, etape 3) : visible uniquement pour un
+   compte "Role Portail" = Admin, injecte dynamiquement par
+   renderAdminAgencyBanner() (scripts/client-portal.js) juste apres .topbar - jamais
+   present dans le HTML statique des pages, jamais affiche a un client normal. */
+.admin-agency-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: var(--brand-soft); border: 1px solid var(--line); border-radius: 14px;
+  padding: 10px 18px; margin: 0 0 24px; font-size: 14px; color: var(--brand-dark);
+}
+.admin-agency-banner-label strong { color: var(--brand-dark); }
+.admin-agency-banner-select {
+  font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--brand-dark);
+  background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer;
+}
+@media (max-width: 640px) {
+  .admin-agency-banner { flex-direction: column; align-items: stretch; text-align: center; }
+}
+
 /* Navigation persistante du portail client (Dashboard/Devis/Factures/Contrat/
    Projet/Assistant vocal/Ressources) - un seul composant partage entre desktop
    et mobile : barre horizontale toujours visible, defile horizontalement plutot
