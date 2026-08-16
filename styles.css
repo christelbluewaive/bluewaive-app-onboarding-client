@@ -378,6 +378,21 @@ a { color: var(--brand); text-decoration: none; }
 .tile-violet .tile-icon { background: var(--ressources-violet); color: #fff; }
 .tile-blue { background: #eaf3f8; border-color: #c3dce8; }
 .tile-blue .tile-icon { background: var(--agent-vocal); color: #fff; }
+/* .tile-clients (etape 4B, Dashboard Admin) : tuile "Clients" des Acces
+   rapides Admin, ouvre la page Console Clients (deja existante, etape 4A) -
+   couleur --brand (generique portail), distincte des 4 tuiles ci-dessus qui
+   reprennent chacune la couleur de sa page cible. */
+.tile-clients { background: var(--brand-soft); border-color: #cfdce6; }
+.tile-clients .tile-icon { background: var(--brand); color: #fff; }
+/* .tile-disabled (etape 4B) : tuiles Documents/Avancement/Ressources/Agent
+   vocal du Dashboard Admin tant qu'aucun client n'est selectionne (rendues en
+   <div>, pas en <a> - non cliquables). Meme convention visuelle que les
+   boutons desactives existants (.btn-outline:disabled, .webcall-btn:disabled) :
+   opacite reduite + curseur "not-allowed", et on neutralise l'effet de survol
+   herite de .tile (translateY/ombre) puisque le survol reste possible sur un
+   <div>. */
+.tile-disabled { opacity: 0.6; cursor: not-allowed; }
+.tile-disabled:hover { transform: none; box-shadow: none; border-color: var(--line); }
 /* Titre de la tuile Agent vocal : sans cette regle, le h3 heritait du bleu
    generique du lien parent (a { color: var(--brand) } = #4682B4), pas de la
    teinte exacte de cet univers (#2682B4) - corrige uniquement ici, les 3

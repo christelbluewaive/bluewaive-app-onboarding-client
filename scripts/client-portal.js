@@ -35,6 +35,9 @@ const ICON_SOP_AGENT_VOCAL = '<svg viewBox="0 0 24 24" fill="none" stroke="curre
 // convention. Devis/Factures/Contrat reutilisent leurs icones existantes.
 const ICON_DOCUMENTS_FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z"/></svg>';
 const ICON_CAHIER_DES_CHARGES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>';
+// Etape 4B (suite) - tuile "Clients" du Dashboard Admin (Acces rapides), voir
+// renderAdminQuickAccessTiles ci-dessous. Aucun autre usage.
+const ICON_CLIENTS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
 
 function statusClass(statut) {
   const value = (statut || '').toLowerCase();
@@ -568,12 +571,25 @@ function renderClientData(payload, rootSelector) {
     // (pas juste masque en CSS), et initWebCallWidget() n'est jamais appele.
     const isAdmin = payload.role === 'admin';
     const agencyInitial = (agency.nomAgence || 'A').trim().charAt(0).toUpperCase() || 'A';
+    // Etape 4B (suite) - Dashboard Admin : "Accès rapides" doit toujours pointer
+    // vers l'ID reel de session/URL (agencyId), jamais agency.id (qui devient
+    // l'ID de l'agence CONSULTEE des qu'un target est selectionne, cf. correctif
+    // WebCall deja pousse a l'etape 3 - meme bug, meme regle). hasTarget indique
+    // si une agence est actuellement selectionnee (sessionStorage, meme cle que
+    // le bandeau) - jamais BLUEWAIVE utilisee comme client par defaut.
+    const agencyId = getAgencyIdFromUrl();
+    const hasTarget = isAdmin ? Boolean(getStoredTargetAgencyId()) : true;
     root.innerHTML = `
       <section class="hero-banner" style="background-image: url('/estacade-saint-jean-de-monts.jpg')">
         <div class="hero-overlay"></div>
         <div class="hero-banner-content">
+          ${isAdmin ? `
+          <div class="hero-badge">Bonjour Christel</div>
+          <p>Pilotez vos clients et les services Bluewaive depuis votre console.</p>
+          ` : `
           <div class="hero-badge">Bienvenue ${agency.prenom || 'client'}</div>
           <p>Votre onboarding est déjà en cours. Retrouvez ici vos documents, votre contrat et l'avancée de votre mise en place.</p>
+          `}
         </div>
       </section>
       <section class="section-block">
@@ -600,18 +616,20 @@ function renderClientData(payload, rootSelector) {
         </div>
       </section>
       <section class="section-block">
-        <div class="section-title">Votre interlocutrice Bluewaive</div>
+        <div class="section-title">${isAdmin ? 'Christel' : 'Votre interlocutrice Bluewaive'}</div>
         <div class="contact-card">
           <img src="/christel-bluewaive.png" alt="Christel" class="contact-photo">
           <div>
             <h3>Christel</h3>
-            <p>Votre interlocutrice dédiée pour l’onboarding, les documents et les premières étapes de mise en service.</p>
+            <p>${isAdmin ? 'Administratrice Bluewaive.' : 'Votre interlocutrice dédiée pour l’onboarding, les documents et les premières étapes de mise en service.'}</p>
+            ${isAdmin ? '' : `
             <div class="contact-actions">
               <a href="https://mail.google.com/mail/?view=cm&fs=1&to=christel@bluewaive.fr" target="_blank" rel="noreferrer">Contacter par email</a>
-            </div>
+            </div>`}
           </div>
         </div>
       </section>
+      ${isAdmin ? '' : `
       <section class="section-block">
         <div class="section-title">Vue d'ensemble</div>
         <div class="kpis">
@@ -620,9 +638,11 @@ function renderClientData(payload, rootSelector) {
           <div class="kpi"><strong>${agency.offreSouscrite.nom}</strong><span>offre souscrite</span></div>
         </div>
       </section>
+      `}
       <section class="section-block">
         <div class="section-title">Accès rapides</div>
         <div class="grid grid-2">
+          ${isAdmin ? renderAdminQuickAccessTiles(agencyId, hasTarget) : `
           <a class="tile tile-gold" href="/client/${agency.id}/documents">
             <span class="tile-icon">${ICON_DOCUMENTS_FOLDER}</span>
             <span class="tile-body"><h3>Documents</h3><p>Retrouvez vos devis, factures, contrat et cahier des charges.</p></span>
@@ -643,6 +663,7 @@ function renderClientData(payload, rootSelector) {
             <span class="tile-body"><h3>Agent vocal</h3><p>Consultez l'activité de votre agent vocal.</p></span>
             <span class="tile-chevron">${ICON_CHEVRON}</span>
           </a>
+          `}
         </div>
       </section>
     `;
@@ -899,6 +920,12 @@ function renderClientData(payload, rootSelector) {
     // agence peut etre sur un palier different (Genesis/Core/Scale).
     const offre = (payload.agency && payload.agency.offreSouscrite) || {};
     const agencyId = getAgencyIdFromUrl();
+    // "Abonnement" et "Facturation et abonnement" (etape 4B) : orientees client
+    // (offre/tarif/statut d'abonnement), sans objet pour le profil interne d'un
+    // compte Admin - retirees uniquement pour role==='admin' (deja verifie cote
+    // serveur, jamais une valeur du navigateur). Client normal : comportement et
+    // contenu de page strictement inchanges.
+    const isAdmin = payload.role === 'admin';
     const agencyInitial = (compte.nomAgence || 'A').trim().charAt(0).toUpperCase() || 'A';
     const contactInitial = (compte.nomContact || 'C').trim().charAt(0).toUpperCase() || 'C';
     root.innerHTML = createNavigationBanner(agencyId, 'Votre compte') + `
@@ -958,6 +985,7 @@ function renderClientData(payload, rootSelector) {
           <div class="info-field"><label>Date de création</label><p>${compte.dateCreation}</p></div>
         </div>
       </section>
+      ${isAdmin ? '' : `
       <section class="section-block">
         <div class="section-title">Abonnement</div>
         <div class="info-grid">
@@ -980,6 +1008,7 @@ function renderClientData(payload, rootSelector) {
           </div>
         </div>
       </section>
+      `}
       <section class="section-block">
         <div class="section-title">Sécurité du compte</div>
         <form id="changePasswordForm" class="security-form">
@@ -1215,6 +1244,44 @@ function renderClientData(payload, rootSelector) {
     });
     return;
   }
+}
+
+// "Accès rapides" du Dashboard en contexte Admin (etape 4B, suite) - reutilise
+// exclusivement le mecanisme targetAgencyId deja valide (bandeau "Agence
+// consultée" + WebCall, aucune nouvelle logique de contexte). "Clients" est
+// toujours actif (c'est le point d'entree pour choisir une agence, jamais
+// desactive). Les tuiles qui dependent d'une agence (Documents/Avancement/
+// Ressources/Agent vocal) restent visibles mais desactivees (non cliquables)
+// tant qu'aucun client n'est selectionne - jamais BLUEWAIVE utilisee comme
+// agence par defaut ici. `agencyId` est toujours l'ID reel de session/URL
+// (jamais l'agence consultee) : c'est le path que verifie le serveur, la
+// donnee de l'agence consultee est deja portee separement par targetAgencyId.
+function renderAdminQuickAccessTiles(agencyId, hasTarget) {
+  const clientTile = `
+    <a class="tile tile-clients" href="/client/${agencyId}/clients">
+      <span class="tile-icon">${ICON_CLIENTS}</span>
+      <span class="tile-body"><h3>Clients</h3><p>Consultez la liste de vos clients actuels.</p></span>
+      <span class="tile-chevron">${ICON_CHEVRON}</span>
+    </a>
+  `;
+  const dependentTiles = [
+    { cls: 'tile-gold', icon: ICON_DOCUMENTS_FOLDER, title: 'Documents', desc: 'Retrouvez les devis, factures, contrat et cahier des charges.', href: `/client/${agencyId}/documents` },
+    { cls: 'tile-green', icon: ICON_AVANCEMENT, title: 'Avancement', desc: "Suivez les étapes de l'onboarding.", href: `/client/${agencyId}/projet` },
+    { cls: 'tile-violet', icon: ICON_RESSOURCES, title: 'Ressources', desc: 'Accédez aux guides et supports utiles.', href: `/client/${agencyId}/ressources` },
+    { cls: 'tile-blue', icon: ICON_AGENT_VOCAL, title: 'Agent vocal', desc: "Consultez l'activité de l'agent vocal.", href: `/client/${agencyId}/retell` }
+  ].map((tile) => hasTarget ? `
+    <a class="tile ${tile.cls}" href="${tile.href}">
+      <span class="tile-icon">${tile.icon}</span>
+      <span class="tile-body"><h3>${tile.title}</h3><p>${tile.desc}</p></span>
+      <span class="tile-chevron">${ICON_CHEVRON}</span>
+    </a>
+  ` : `
+    <div class="tile ${tile.cls} tile-disabled" aria-disabled="true">
+      <span class="tile-icon">${tile.icon}</span>
+      <span class="tile-body"><h3>${tile.title}</h3><p>Sélectionnez d'abord un client.</p></span>
+    </div>
+  `).join('');
+  return clientTile + dependentTiles;
 }
 
 // Carte client (page "Clients", Console Admin) - reutilise les classes visuelles
@@ -1584,13 +1651,26 @@ function setStoredTargetAgency(id, name) {
   }
 }
 
-// Bandeau "Agence consultée : ..." + selecteur de changement d'agence - un seul
-// composant partage, injecte par loadClientData() des que le role admin est
-// confirme par le serveur (jamais construit sur la seule foi d'une valeur locale).
-// Idempotent (garde ci-dessous) : sans effet si deja present sur la page. Alimente
-// par la route admin-clients deja creee (etape 1) - aucune nouvelle source de
-// donnees, aucun secret (memes champs deja verifies sans hash/cle/token).
+// Bandeau "Agence consultée : ..." + selecteur de changement d'agence, ET titre
+// "Console Bluewaive" (etape 4B) - un seul et meme point d'entree partage, appele
+// des que le role admin est confirme par le serveur (jamais construit sur la
+// seule foi d'une valeur locale, jamais duplique entre les pages qui l'appellent -
+// voir loadClientData() et la page "Clients"). Un client normal n'atteint jamais
+// cette fonction : le titre "Espace Client" reste donc intact pour lui, inchange.
 function renderAdminAgencyBanner(agencyId) {
+  // Titre de page (onglet navigateur + en-tete visible) : applique avant la garde
+  // d'idempotence ci-dessous, pour rester correct meme en cas de reappel (aucun
+  // effet de bord, reecrire la meme valeur est sans risque).
+  document.title = 'Console Bluewaive';
+  const brandTitleEl = document.querySelector('.brand-title');
+  if (brandTitleEl) brandTitleEl.textContent = 'Console Bluewaive';
+  // Libelle "Votre compte" -> "Profil Admin" (etape 4B) : meme element #compte-link
+  // deja present sur toutes les pages, seul le texte change (l'icone ::before et le
+  // href, deja poses ailleurs, restent intacts). Contenu de la page Compte elle-meme
+  // non modifie ici (hors perimetre).
+  const compteLinkEl = document.querySelector('#compte-link');
+  if (compteLinkEl) compteLinkEl.textContent = 'Profil Admin';
+
   if (document.querySelector('.admin-agency-banner')) return;
   const shell = document.querySelector('.page-shell');
   const topbar = document.querySelector('.topbar');
