@@ -101,12 +101,29 @@ a { color: var(--brand); text-decoration: none; }
   padding: 10px 18px; margin: 0 0 24px; font-size: 14px; color: var(--brand-dark);
 }
 .admin-agency-banner-label strong { color: var(--brand-dark); }
+.admin-agency-banner-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.admin-agency-banner-link {
+  font-size: 13.5px; font-weight: 600; color: var(--brand-dark);
+  background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px;
+}
+.admin-agency-banner-link:hover { background: var(--brand-soft); }
 .admin-agency-banner-select {
   font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--brand-dark);
   background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer;
 }
 @media (max-width: 640px) {
   .admin-agency-banner { flex-direction: column; align-items: stretch; text-align: center; }
+  .admin-agency-banner-actions { justify-content: center; }
+}
+
+/* Page "Clients" (Console Admin, etape 4A) : grille responsive auto-fill (jamais
+   un tableau fixe, illisible sur mobile - une carte par colonne des que la
+   largeur disponible descend sous ~260px, sans media query dediee) - reutilise
+   .doc-card/.doc-card-clickable/.doc-figures/.status-pill deja existants (memes
+   cartes que Devis/Factures/etc.) plutot que d'inventer un nouveau systeme. */
+.clients-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.client-card-button {
+  font: inherit; color: inherit; text-align: left; -webkit-appearance: none; appearance: none;
 }
 
 /* Navigation persistante du portail client (Dashboard/Devis/Factures/Contrat/

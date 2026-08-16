@@ -1185,6 +1185,71 @@ function renderClientData(payload, rootSelector) {
     `;
     return;
   }
+
+  if (rootSelector === '#clients-root') {
+    const agencyId = getAgencyIdFromUrl();
+    // Page reservee au role admin cote serveur (lib/app.js, subpage 'clients') -
+    // le bandeau est donc toujours pertinent ici, pas besoin de verifier
+    // payload.role (absent de la reponse admin-clients, qui ne renvoie que
+    // { clients } - route inchangee, voir etape 1).
+    renderAdminAgencyBanner(agencyId);
+    const clients = Array.isArray(payload.clients) ? payload.clients : [];
+    root.innerHTML = createNavigationBanner(agencyId, 'Clients') + (clients.length ? `
+      <section class="section-block">
+        <div class="section-title">Clients actuels (${clients.length})</div>
+        <div class="grid clients-grid">
+          ${clients.map(renderClientCard).join('')}
+        </div>
+      </section>
+    ` : '<section class="section-block"><div class="meta">Aucun client actuel pour le moment.</div></section>');
+
+    // Selection d'un client : memes helpers que le bandeau (etape 3), jamais une
+    // deuxieme logique sessionStorage. Redirige vers le Dashboard de CETTE
+    // session (agencyId reel, jamais l'agence choisie) - le bandeau y affichera
+    // immediatement "Agence consultée : ..." des le chargement de la page.
+    root.querySelectorAll('[data-client-select]').forEach((el) => {
+      el.addEventListener('click', () => {
+        setStoredTargetAgency(el.dataset.clientId, el.dataset.clientName);
+        window.location.href = `/client/${agencyId}`;
+      });
+    });
+    return;
+  }
+}
+
+// Carte client (page "Clients", Console Admin) - reutilise les classes visuelles
+// deja existantes pour les documents (.doc-card/.doc-figures/.status-pill, voir
+// styles.css) plutot que d'inventer un nouveau systeme de carte. Toute donnee
+// absente affiche un tiret neutre ("—"), jamais une valeur inventee.
+function renderClientCard(client) {
+  const accessLabel = client.accesOnboarding ? 'Accès actif' : 'Accès inactif';
+  const accessClass = client.accesOnboarding ? 'active' : 'pending';
+  const voiceOsLabel = client.voiceOsActif
+    ? `Voice OS actif${client.agentVocal ? ` - ${escapeHtml(client.agentVocal)}` : ''}`
+    : (client.agentVocal ? escapeHtml(client.agentVocal) : 'Voice OS inactif');
+  const progressionLabel = client.progression ? `${client.progression.completed}/${client.progression.total} étapes` : '—';
+  return `
+    <button type="button" class="doc-card doc-card-clickable client-card-button" data-client-select data-client-id="${escapeHtml(client.id)}" data-client-name="${escapeHtml(client.nomAgence || '')}">
+      <div class="doc-head">
+        <div>
+          <div class="doc-kicker">Client</div>
+          <div class="doc-ref">${escapeHtml(client.nomAgence || '—')}</div>
+        </div>
+        <span class="status-pill ${accessClass}">${accessLabel}</span>
+      </div>
+      <div class="doc-figures">
+        <div class="doc-figure"><span class="label">Contact</span><span class="value">${escapeHtml(client.contact || '—')}</span></div>
+        <div class="doc-figure"><span class="label">Email</span><span class="value">${escapeHtml(client.email || '—')}</span></div>
+        <div class="doc-figure"><span class="label">Statut</span><span class="value">${escapeHtml(client.statut || '—')}</span></div>
+        <div class="doc-figure"><span class="label">Assistant vocal</span><span class="value">${voiceOsLabel}</span></div>
+        <div class="doc-figure"><span class="label">Offre</span><span class="value">${escapeHtml(client.offre || '—')}</span></div>
+        <div class="doc-figure"><span class="label">Progression</span><span class="value">${progressionLabel}</span></div>
+      </div>
+      <div class="doc-footer">
+        <span class="small muted">Cliquer pour consulter cette agence</span>
+      </div>
+    </button>
+  `;
 }
 
 // ---- Web Call Retell (bouton "Parler avec [Agent Vocal]", carte "Votre assistante vocale") ----
@@ -1539,9 +1604,12 @@ function renderAdminAgencyBanner(agencyId) {
     <span class="admin-agency-banner-label">${storedId
       ? `Agence consultée : <strong>${escapeHtml(storedName || storedId)}</strong>`
       : 'Aucune agence sélectionnée'}</span>
-    <select class="admin-agency-banner-select" aria-label="Changer d'agence consultée" disabled>
-      <option value="">Chargement…</option>
-    </select>
+    <div class="admin-agency-banner-actions">
+      <a class="admin-agency-banner-link" href="/client/${agencyId}/clients">Clients</a>
+      <select class="admin-agency-banner-select" aria-label="Changer d'agence consultée" disabled>
+        <option value="">Chargement…</option>
+      </select>
+    </div>
   `;
   if (topbar && topbar.parentNode === shell) {
     topbar.insertAdjacentElement('afterend', banner);
@@ -1608,6 +1676,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ressources = document.querySelector('#ressources-root');
   const retell = document.querySelector('#retell-root');
   const prospect = document.querySelector('#prospect-root');
+  const clients = document.querySelector('#clients-root');
 
   if (overview) loadClientData('overview', '#overview-root').catch(() => { overview.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
   if (documents) loadClientData('documents', '#documents-root').catch(() => { documents.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
@@ -1619,6 +1688,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (compte) loadClientData('compte', '#compte-root').catch(() => { compte.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
   if (ressources) loadClientData('ressources', '#ressources-root').catch(() => { ressources.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
   if (retell) loadClientData('retell-stats', '#retell-root').catch(() => { retell.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  // Page "Clients" (Console Admin) : reservee au role admin cote serveur (403/404
+  // sinon, voir lib/app.js) - un client normal n'atteint jamais ce point (page
+  // non servie). Meme pattern d'echec que les autres onglets : message neutre,
+  // jamais de detail technique.
+  if (clients) loadClientData('admin-clients', '#clients-root').catch(() => { clients.innerHTML = '<div class="section-block">Impossible de récupérer la liste des clients pour le moment.</div>'; });
 
   // Fiche prospect : le jeton vient de sessionStorage (jamais de l'URL visible),
   // depose par initProspectLinks() au clic depuis Assistant vocal.
