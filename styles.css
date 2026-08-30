@@ -662,7 +662,22 @@ a { color: var(--brand); text-decoration: none; }
   .mascotte-hero { height: 110px; right: 6px; }
 }
 @media (max-width: 520px) {
-  .mascotte-hero { display: none; }
+  .mascotte-hero {
+    display: block;
+    height: 72px;
+    right: 8px;
+    bottom: 6px;
+  }
+
+  .hero-banner-content {
+    max-width: none;
+    padding: 20px 88px 20px 14px;
+  }
+
+  .hero-banner-content p {
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
 }
 .support-section-block { position: relative; }
 .mascotte-corner { position: absolute; top: 16px; right: 20px; height: 56px; width: auto; object-fit: contain; }
