@@ -39,6 +39,49 @@ const ICON_CAHIER_DES_CHARGES = '<svg viewBox="0 0 24 24" fill="none" stroke="cu
 // renderAdminQuickAccessTiles ci-dessous. Aucun autre usage.
 const ICON_CLIENTS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
 
+// Mascottes illustratives (assets/mascottes/) - purement decoratives, une par
+// univers/etat du portail, aucune logique metier attachee. Noms de fichiers
+// centralises ici uniquement pour ne pas repeter des chemins fragiles
+// (espaces/accents/virgule) ailleurs dans ce fichier - fichiers jamais
+// renommes, encodeURIComponent obligatoire a l'usage (voir mascotteImg).
+const MASCOTTES = {
+  accueil: 'Accueil-transparent.png',
+  agentVocal: 'AgentVocal.png',
+  resultats: 'Résultats.png',
+  ressources: 'Explication.png',
+  support: 'Support.png',
+  etapesProjet: 'Miseenservice.png',
+  etapeTerminee: "Etape terminee1une tâche ou une phase vient d'être achevée.png",
+  // Fichier original "validation finale, succès, projet accepté..png" conserve
+  // tel quel dans assets/mascottes/ (jamais supprime) mais son double point
+  // avant l'extension declenche la garde anti-traversee de resolvePagePath
+  // (normalized.includes('..')) dans lib/app.js - copie sous un nom sans point
+  // double, seule reference utilisee ici.
+  validationFinale: 'validation-finale.png',
+  alerte: 'Attention.png'
+};
+
+function mascotteImg(key, alt, className = '') {
+  const filename = MASCOTTES[key];
+  if (!filename) return '';
+  // Les fichiers de assets/ sont servis a la racine (voir resolvePagePath dans
+  // lib/app.js, deja utilise ainsi pour FAQ_Bluewaive.html etc.) - jamais de
+  // prefixe /assets/ dans l'URL publique.
+  return `<img src="/mascottes/${encodeURIComponent(filename)}" alt="${escapeHtml(alt)}" class="mascotte ${className}" loading="lazy">`;
+}
+
+// Bloc "donnees indisponibles" partage par tous les root une fois le fetch en
+// echec (voir initClientPortal plus bas) - mascotte Alertes + message, remplace
+// le texte brut existant sans changer la logique de fallback elle-meme.
+function renderUnavailableBlock() {
+  return `
+    <div class="section-block mascotte-alert-block">
+      ${mascotteImg('alerte', 'Alerte Bluewaive', 'mascotte-alert-img')}
+      <p>Données indisponibles pour le moment.</p>
+    </div>
+  `;
+}
+
 function statusClass(statut) {
   const value = (statut || '').toLowerCase();
   if (['accepté', 'accepte', 'payée', 'payee', 'signé', 'signe', 'actif', 'disponible'].some(s => value.includes(s))) return 'active';
@@ -582,6 +625,7 @@ function renderClientData(payload, rootSelector) {
     root.innerHTML = `
       <section class="hero-banner" style="background-image: url('/estacade-saint-jean-de-monts.jpg')">
         <div class="hero-overlay"></div>
+        ${mascotteImg('accueil', 'Mascotte Bluewaive de bienvenue', 'mascotte-hero')}
         <div class="hero-banner-content">
           ${isAdmin ? `
           <div class="hero-badge">Bonjour Christel</div>
@@ -615,8 +659,9 @@ function renderClientData(payload, rootSelector) {
           </div>` : ''}
         </div>
       </section>
-      <section class="section-block">
+      <section class="section-block support-section-block">
         <div class="section-title">${isAdmin ? 'Christel' : 'Votre interlocutrice Bluewaive'}</div>
+        ${isAdmin ? '' : mascotteImg('support', 'Mascotte support Bluewaive', 'mascotte-corner')}
         <div class="contact-card">
           <img src="/christel-bluewaive.png" alt="Christel" class="contact-photo">
           <div>
@@ -818,7 +863,10 @@ function renderClientData(payload, rootSelector) {
 
     root.innerHTML = createNavigationBanner(agencyId, 'Avancement du projet') + `
       <section class="section-block">
-        <div class="section-title">Avancement du projet</div>
+        <div class="section-title-row">
+          ${mascotteImg('etapesProjet', 'Mascotte étapes du projet Bluewaive', 'mascotte-title')}
+          <div class="section-title">Avancement du projet</div>
+        </div>
         <div class="donut-grid">
           ${stepsWithStatus.map(step => `
             <div class="donut-panel donut-step-panel">
@@ -830,6 +878,7 @@ function renderClientData(payload, rootSelector) {
                 </div>
                 <div>
                   <span class="status-pill ${step.reached ? 'active' : 'pending'}">${step.statut}</span>
+                  ${step.reached ? mascotteImg('etapeTerminee', 'Étape terminée', 'mascotte-inline') : ''}
                   <div class="meta">${step.tasksDone} / ${step.tasksTotal} tâche complétée</div>
                 </div>
               </div>
@@ -854,6 +903,11 @@ function renderClientData(payload, rootSelector) {
               </div>
               <div class="progress-global-summary">
                 <div class="progress-global-headline">${completedCount} étape${completedCount > 1 ? 's' : ''} terminée${completedCount > 1 ? 's' : ''} sur ${totalCount}</div>
+                ${(totalCount > 0 && completedCount === totalCount) ? `
+                <div class="mascotte-validation-block">
+                  ${mascotteImg('validationFinale', 'Projet validé, toutes les étapes sont terminées', 'mascotte-validation-img')}
+                  <span>Projet finalisé, bravo !</span>
+                </div>` : ''}
                 <div class="progress-global-stats">
                   <div class="progress-stat">
                     <span class="progress-stat-dot" style="background:#2E7D32"></span>
@@ -946,7 +1000,7 @@ function renderClientData(payload, rootSelector) {
                 : `<div class="contact-avatar">${agencyInitial}</div>`}
             </div>
             <div class="account-media-info">
-              <h3>${escapeHtml(compte.nomAgence) || 'Agence'}</h3>
+              ${isAdmin ? '' : `<h3>${escapeHtml(compte.nomAgence) || 'Agence'}</h3>`}
               <button type="button" class="btn-outline" id="editLogoBtn">Modifier le logo</button>
               <input type="file" id="logoFileInput" accept="image/jpeg,image/jpg,image/png,image/webp" hidden />
             </div>
@@ -1058,7 +1112,10 @@ function renderClientData(payload, rootSelector) {
     const ressources = payload.ressources || {};
     root.innerHTML = createNavigationBanner(agencyId, 'Ressources') + `
       <section class="section-block">
-        <div class="section-title">Ressources</div>
+        <div class="section-title-row">
+          ${mascotteImg('ressources', 'Mascotte ressources Bluewaive', 'mascotte-title')}
+          <div class="section-title">Ressources</div>
+        </div>
         <p class="small">Guides, tutoriels et supports pour utiliser Bluewaive au quotidien.</p>
         <div class="grid resource-grid">
           ${RESOURCE_CARDS.map(config => renderResourceCard(config, ressources[config.key])).join('')}
@@ -1113,14 +1170,20 @@ function renderClientData(payload, rootSelector) {
 
     root.innerHTML = createNavigationBanner(agencyId, 'Assistant vocal') + `
       <section class="section-block">
-        <div class="section-title">Performance de l'agent vocal</div>
+        <div class="section-title-row">
+          ${mascotteImg('agentVocal', 'Mascotte assistant vocal Bluewaive', 'mascotte-title')}
+          <div class="section-title">Performance de l'agent vocal</div>
+        </div>
         ${(!retell && !voiceOs.connected) ? '<div class="meta">Données indisponibles pour le moment.</div>' : ''}
         <div class="kpis">
           ${performanceCards.join('')}
         </div>
       </section>
       <section class="section-block">
-        <div class="section-title">Qualification commerciale</div>
+        <div class="section-title-row">
+          ${mascotteImg('resultats', 'Mascotte résultats Bluewaive', 'mascotte-title')}
+          <div class="section-title">Qualification commerciale</div>
+        </div>
         ${voiceOs.connected ? '' : '<div class="meta">Données indisponibles pour le moment.</div>'}
         <div class="kpis">
           ${qualificationCards.join('')}
@@ -1796,16 +1859,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const prospect = document.querySelector('#prospect-root');
   const clients = document.querySelector('#clients-root');
 
-  if (overview) loadClientData('overview', '#overview-root').catch(() => { overview.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (documents) loadClientData('documents', '#documents-root').catch(() => { documents.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (devis) loadClientData('devis', '#devis-root').catch(() => { devis.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (factures) loadClientData('factures', '#factures-root').catch(() => { factures.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (contrat) loadClientData('contrat', '#contrat-root').catch(() => { contrat.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (cdc) loadClientData('cahier-des-charges', '#cdc-root').catch(() => { cdc.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (projet) loadClientData('overview', '#projet-root').catch(() => { projet.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (compte) loadClientData('compte', '#compte-root').catch(() => { compte.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (ressources) loadClientData('ressources', '#ressources-root').catch(() => { ressources.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
-  if (retell) loadClientData('retell-stats', '#retell-root').catch(() => { retell.innerHTML = '<div class="section-block">Donnees indisponibles.</div>'; });
+  if (overview) loadClientData('overview', '#overview-root').catch(() => { overview.innerHTML = renderUnavailableBlock(); });
+  if (documents) loadClientData('documents', '#documents-root').catch(() => { documents.innerHTML = renderUnavailableBlock(); });
+  if (devis) loadClientData('devis', '#devis-root').catch(() => { devis.innerHTML = renderUnavailableBlock(); });
+  if (factures) loadClientData('factures', '#factures-root').catch(() => { factures.innerHTML = renderUnavailableBlock(); });
+  if (contrat) loadClientData('contrat', '#contrat-root').catch(() => { contrat.innerHTML = renderUnavailableBlock(); });
+  if (cdc) loadClientData('cahier-des-charges', '#cdc-root').catch(() => { cdc.innerHTML = renderUnavailableBlock(); });
+  if (projet) loadClientData('overview', '#projet-root').catch(() => { projet.innerHTML = renderUnavailableBlock(); });
+  if (compte) loadClientData('compte', '#compte-root').catch(() => { compte.innerHTML = renderUnavailableBlock(); });
+  if (ressources) loadClientData('ressources', '#ressources-root').catch(() => { ressources.innerHTML = renderUnavailableBlock(); });
+  if (retell) loadClientData('retell-stats', '#retell-root').catch(() => { retell.innerHTML = renderUnavailableBlock(); });
   // Page "Clients" (Console Admin) : reservee au role admin cote serveur (403/404
   // sinon, voir lib/app.js) - un client normal n'atteint jamais ce point (page
   // non servie). Meme pattern d'echec que les autres onglets : message neutre,
