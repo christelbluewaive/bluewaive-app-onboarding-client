@@ -13,7 +13,7 @@
 (function () {
   'use strict';
 
-  const STEP_IDS = ['step1', 'step2', 'step3', 'step4', 'step5'];
+  const STEP_IDS = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
   const SEMAINES_PAR_MOIS = 52 / 12; // convention explicite, affichee a cote des resultats financiers
 
   // Echelle de couleur de la barre "temps total avant / semaine" : 35 h = une semaine

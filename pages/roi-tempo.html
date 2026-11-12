@@ -145,6 +145,18 @@
       }
       .tempo-compare { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 4px; }
 
+      /* Split avant/apres a l'interieur meme du hero principal, inspire d'une maquette ROI
+         ou le chiffre phare et la comparaison avant/apres restent dans une seule carte -
+         remplace l'ancien bloc .tempo-compare separe, memes ids/valeurs, juste regroupes. */
+      .tempo-hero-split {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px;
+        padding-top: 14px; border-top: 1px solid rgba(70, 130, 180, 0.18);
+      }
+      .tempo-hero-split-col { display: flex; flex-direction: column; gap: 6px; }
+      .tempo-hero-split-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 700; }
+      .tempo-hero-split-value { font-size: 1.3rem; font-weight: 800; color: var(--brand-dark); font-variant-numeric: tabular-nums; }
+      .tempo-bar-track.small { height: 8px; }
+
       .tempo-kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
       @media (max-width: 420px) { .tempo-kpi-grid { grid-template-columns: 1fr; } }
       .tempo-kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
@@ -264,7 +276,10 @@
             </div>
           </div>
 
-          <!-- Onglet detail : 5 etapes + champs financiers, uniquement en mode detail -->
+          <!-- Onglet detail : 6 etapes + champs financiers, uniquement en mode detail. Les 6
+               etapes suivent les 4 zones du workflow n8n "Tempo - Generation Propal & Devis
+               Pro MVP" (CR appel / textes a valider / format document / format presentation
+               Gamma) - voir note dans ce meme workflow pour le detail des noeuds. -->
           <div class="section-block" id="panel-detail-inputs" hidden>
             <div class="section-title">Détail par étape (minutes)</div>
             <div class="tempo-steps-head">
@@ -316,6 +331,15 @@
                   <input type="number" id="step5Tempo" min="0" step="1" placeholder="—" oninput="TEMPO.calc()" />
                 </div>
               </div>
+              <div class="tempo-step-row">
+                <div class="tempo-step-label">Générer la présentation (Gamma)</div>
+                <div class="tempo-step-inputs">
+                  <label for="step6Manuel">Manuel</label>
+                  <input type="number" id="step6Manuel" min="0" step="1" placeholder="—" oninput="TEMPO.calc()" />
+                  <label for="step6Tempo">Tempo</label>
+                  <input type="number" id="step6Tempo" min="0" step="1" placeholder="—" oninput="TEMPO.calc()" />
+                </div>
+              </div>
             </div>
             <div class="tempo-hint" style="margin-top: 10px;">0 est une valeur valide pour une étape ; une étape laissée vide est une donnée manquante.</div>
           </div>
@@ -364,18 +388,22 @@
                     <div class="tempo-bar-fill" id="bar-gain-fill" style="width: 0%"></div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Comparaison visuelle avant / avec Tempo, memes valeurs que les KPI
-                   texte ci-dessous (v-totalAvant/v-totalTempo) - jamais recalculees ici. -->
-              <div class="tempo-compare">
-                <div class="tempo-bar-wrap">
-                  <div class="tempo-bar-label"><span>Temps total avant / semaine</span><span id="bar-avant-value">0 h</span></div>
-                  <div class="tempo-bar-track"><div class="tempo-bar-fill" id="bar-avant-fill" style="width: 0%"></div></div>
-                </div>
-                <div class="tempo-bar-wrap">
-                  <div class="tempo-bar-label"><span>Temps total avec Tempo / semaine</span><span id="bar-tempo-value">0 h</span></div>
-                  <div class="tempo-bar-track"><div class="tempo-bar-fill success" id="bar-tempo-fill" style="width: 0%"></div></div>
+                <!-- Avant/apres regroupe dans le hero (meme carte que le chiffre phare),
+                     memes ids et memes valeurs que precedemment (bar-avant-value,
+                     bar-avant-fill, bar-tempo-value, bar-tempo-fill) - jamais recalcules
+                     ici, juste repositionnes visuellement. -->
+                <div class="tempo-hero-split">
+                  <div class="tempo-hero-split-col">
+                    <div class="tempo-hero-split-label">Aujourd'hui / semaine</div>
+                    <div class="tempo-hero-split-value" id="bar-avant-value">0 h</div>
+                    <div class="tempo-bar-track small"><div class="tempo-bar-fill" id="bar-avant-fill" style="width: 0%"></div></div>
+                  </div>
+                  <div class="tempo-hero-split-col">
+                    <div class="tempo-hero-split-label">Avec Tempo / semaine</div>
+                    <div class="tempo-hero-split-value" id="bar-tempo-value">0 h</div>
+                    <div class="tempo-bar-track small"><div class="tempo-bar-fill success" id="bar-tempo-fill" style="width: 0%"></div></div>
+                  </div>
                 </div>
               </div>
 
@@ -406,15 +434,13 @@
                   <div class="label">Origine du temps Tempo</div>
                   <div class="value"><span class="tempo-badge" id="v-origineBadge">Hypothèse</span></div>
                 </div>
-                <div class="tempo-kpi">
-                  <div class="label">Temps total avant / semaine</div>
-                  <div class="value" id="v-totalAvant">0 h</div>
-                </div>
-                <div class="tempo-kpi">
-                  <div class="label">Temps total avec Tempo / semaine</div>
-                  <div class="value" id="v-totalTempo">0 h</div>
-                </div>
               </div>
+              <!-- v-totalAvant/v-totalTempo restent mis a jour par roi-tempo.js (meme
+                   source que bar-avant-value/bar-tempo-value dans le hero ci-dessus) mais
+                   ne sont plus affiches ici en double - conserves hors-ecran pour ne pas
+                   toucher au JS. -->
+              <span id="v-totalAvant" hidden></span>
+              <span id="v-totalTempo" hidden></span>
             </div>
           </div>
 
