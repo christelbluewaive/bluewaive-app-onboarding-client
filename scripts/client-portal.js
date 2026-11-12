@@ -1048,8 +1048,7 @@ function renderClientData(payload, rootSelector) {
         <div class="billing-block">
           <div class="billing-info">
             <div class="billing-offer">${escapeHtml(offre.nom) || 'Abonnement Bluewaive'}</div>
-            <div class="billing-price">${offre.prixMensuel ? `${offre.prixMensuel} € / mois` : 'Tarif non disponible'}</div>
-            <p class="billing-description">Votre abonnement assure l’utilisation continue de votre agent vocal Bluewaive, sa maintenance et les mises à jour du service.</p>
+            <p class="billing-description">Votre abonnement assure l’utilisation continue de votre service Bluewaive, sa maintenance et les mises à jour. Le tarif exact est défini avec Christel.</p>
           </div>
           <div class="billing-action">
             <span class="status-pill pending">À activer</span>

@@ -8,6 +8,8 @@ Portail client autonome pour Bluewaive (voir `../CLAUDE.md` racine pour le posit
 
 ⚠️ L'intégration Retell/Voice OS (agent vocal) documentée plus bas dans ce fichier reste un actif technique réel du projet, mais n'est plus présentée comme le cœur du produit dans l'interface client depuis le repositionnement d'octobre 2026 - l'onglet de navigation "Assistant vocal" et la section "Votre assistante vocale" de l'accueil sont masqués pour les clients standards (visibles uniquement en vue Admin, pour un usage upsell futur). Ne pas réafficher ces éléments pour un client standard sans décision explicite de Christel.
 
+⚠️ Les sections "Abonnement" et "Facturation et abonnement" de la page "Votre compte" affichaient encore, jusqu'au 2026-11-12, le texte obsolète "votre agent vocal Bluewaive" et un prix automatique lu depuis Airtable (`offre.prixMensuel`). Corrigé le même jour sur décision explicite de Christel : le texte est désormais neutre ("votre service Bluewaive", tarif "défini avec Christel"), le prix automatique n'est plus affiché, mais le **bouton de paiement Stripe reste actif** (`buy.stripe.com/aFaFzHidW98B4XVbtn60007`, confirmé par Christel comme le bon lien pour le programme pilote) - ses clients doivent pouvoir payer via Stripe. Ne pas réafficher de prix automatique Airtable sur cette page sans revalidation explicite de Christel.
+
 MVP conçu pour un client à la fois au départ, pensé pour scaler à plusieurs entreprises clientes via Airtable.
 
 ## Langue
