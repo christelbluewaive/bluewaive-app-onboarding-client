@@ -61,14 +61,6 @@
       .tempo-field input[type="number"]:focus, .tempo-field select:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
       .tempo-field .tempo-hint { font-size: 0.82rem; color: var(--muted); }
 
-      .tempo-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
-      .tempo-chip {
-        border: 1px solid var(--line); background: #faf6ec; color: var(--text); border-radius: 999px;
-        padding: 6px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease;
-      }
-      .tempo-chip:hover { border-color: var(--brand); color: var(--brand-dark); }
-      .tempo-chip.active { background: var(--brand); border-color: var(--brand); color: #fff; }
-
       .tempo-result-hero.money { background: #e8f8ef; border-color: #bfe8d2; }
       .tempo-result-hero.money .value { color: var(--success); }
       .tempo-result-hint { font-size: 0.78rem; color: var(--muted); margin-top: 6px; font-style: italic; }
@@ -215,11 +207,6 @@
         <div class="tempo-field">
           <label for="coutHoraire">Coût horaire chargé moyen d'un commercial (€)</label>
           <input type="number" id="coutHoraire" min="0" step="1" value="35" oninput="TEMPO.calc()" />
-          <div class="tempo-chips">
-            <button type="button" class="tempo-chip" data-preset-cout="25" onclick="TEMPO.applyCoutHorairePreset(25)">Junior - 25 €</button>
-            <button type="button" class="tempo-chip active" data-preset-cout="35" onclick="TEMPO.applyCoutHorairePreset(35)">Confirmé - 35 €</button>
-            <button type="button" class="tempo-chip" data-preset-cout="45" onclick="TEMPO.applyCoutHorairePreset(45)">Senior - 45 €</button>
-          </div>
           <div class="tempo-hint">
             Hypothèse par défaut (salaire chargé moyen d'un commercial terrain en France, charges patronales
             incluses) - à ajuster selon votre entreprise. Sert uniquement à estimer une économie, jamais un

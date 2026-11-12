@@ -181,7 +181,6 @@
     // un defaut de 35 €/h deja renseigne - donc "manquant" seulement si l'utilisatrice
     // vide le champ elle-meme.
     const coutHoraire = readField('coutHoraire');
-    syncChipState(coutHoraire.value, '[data-preset-cout]', 'data-preset-cout');
     let valeurMensuelle = null;
     if (!coutHoraire.missing) {
       // heuresEquipeParSemaine peut etre negatif (Tempo plus lent) : la valeur du temps
@@ -199,13 +198,6 @@
     }
 
     return { incomplete: false, heuresEquipeParSemaine, nbCommerciauxValue: nbCommerciaux.value, valeurMensuelle };
-  }
-
-  function syncChipState(currentValue, selector, attr) {
-    document.querySelectorAll(selector).forEach((chip) => {
-      const chipValue = Number(chip.getAttribute(attr));
-      chip.classList.toggle('active', chipValue === currentValue);
-    });
   }
 
   // ---- Rendu : business case financier (onglet detail uniquement) ----
@@ -282,11 +274,6 @@
     calc();
   }
 
-  function applyCoutHorairePreset(value) {
-    el('coutHoraire').value = value;
-    calc();
-  }
-
   function loadExample() {
     el('nbCommerciaux').value = 1;
     el('volumeEquipe').value = 10;
@@ -306,7 +293,7 @@
       el(prefix + 'Tempo').value = '';
     });
     el('origineTempo').value = 'hypothese';
-    // Le cout horaire revient a son hypothese par defaut (35 €/h, "Confirmé") plutot que
+    // Le cout horaire revient a son hypothese par defaut (35 €/h) plutot que
     // d'etre vide : c'est une hypothese de depart raisonnable, pas une donnee du dossier
     // en cours - contrairement a coutMensuel/fraisMiseEnPlace (prix Bluewaive reel pour CE
     // client, jamais presuppose).
@@ -316,7 +303,7 @@
     setMode('simple');
   }
 
-  window.TEMPO = { calc, setMode, loadExample, reset, applyCoutHorairePreset };
+  window.TEMPO = { calc, setMode, loadExample, reset };
 
   document.addEventListener('DOMContentLoaded', () => {
     calc();
