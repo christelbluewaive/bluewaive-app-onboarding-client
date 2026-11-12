@@ -1,10 +1,14 @@
 # Bluewaive - Espace Client (Portail Onboarding)
 
+Voir [`JOURNAL.md`](./JOURNAL.md) pour le suivi daté des modifications de ce projet.
+
 ## Identité
 
-Portail client autonome pour Bluewaive (SaaS agent vocal IA pour agences immobilières). Chaque agence signée obtient un accès personnalisé (`/client/{agencyId}`) pour suivre l'avancement de son projet : devis, factures, contrat, statistiques d'appels Retell, ressources de formation.
+Portail client autonome pour Bluewaive (voir `../CLAUDE.md` racine pour le positionnement actuel : programme pilote distributeurs B2B hygiène/entretien, compte rendu de RDV → proposition commerciale et devis). Chaque entreprise signée obtient un accès personnalisé (`/client/{agencyId}`) pour suivre l'avancement de son projet : devis, factures, contrat, ressources.
 
-MVP conçu pour un client à la fois au départ, pensé pour scaler à plusieurs agences via Airtable.
+⚠️ L'intégration Retell/Voice OS (agent vocal) documentée plus bas dans ce fichier reste un actif technique réel du projet, mais n'est plus présentée comme le cœur du produit dans l'interface client depuis le repositionnement d'octobre 2026 - l'onglet de navigation "Assistant vocal" et la section "Votre assistante vocale" de l'accueil sont masqués pour les clients standards (visibles uniquement en vue Admin, pour un usage upsell futur). Ne pas réafficher ces éléments pour un client standard sans décision explicite de Christel.
+
+MVP conçu pour un client à la fois au départ, pensé pour scaler à plusieurs entreprises clientes via Airtable.
 
 ## Langue
 

@@ -52,6 +52,7 @@ const MASCOTTES = {
   support: 'Support.png',
   etapesProjet: 'Miseenservice.png',
   etapeTerminee: "Etape terminee1une tâche ou une phase vient d'être achevée.png",
+  conseil: 'Conseil.png',
   // Fichier original "validation finale, succès, projet accepté..png" conserve
   // tel quel dans assets/mascottes/ (jamais supprime) mais son double point
   // avant l'extension declenche la garde anti-traversee de resolvePagePath
@@ -161,7 +162,7 @@ const RESOURCE_CARDS = [
   {
     key: 'faq',
     title: 'FAQ',
-    description: 'Les réponses aux questions les plus fréquentes sur Bluewaive Voice OS.',
+    description: 'Les réponses aux questions les plus fréquentes sur votre espace client Bluewaive.',
     buttonLabel: 'Consulter la FAQ',
     icon: ICON_FAQ,
     accent: 'resource-accent-violet'
@@ -172,14 +173,6 @@ const RESOURCE_CARDS = [
     description: 'Comprenez le fonctionnement du portail et les principales fonctionnalités du service.',
     buttonLabel: 'Ouvrir la documentation',
     icon: ICON_DEVIS,
-    accent: 'resource-accent-violet'
-  },
-  {
-    key: 'guideAgentVocal',
-    title: 'Guide de l’agent vocal',
-    description: 'Comprenez le rôle de votre agent vocal et la manière d’exploiter les informations collectées.',
-    buttonLabel: 'Consulter le guide',
-    icon: ICON_AGENT_VOCAL,
     accent: 'resource-accent-violet'
   },
   {
@@ -196,14 +189,6 @@ const RESOURCE_CARDS = [
     description: 'Support de formation destiné aux équipes pour la prise en main de Bluewaive.',
     buttonLabel: 'Ouvrir le support',
     icon: ICON_FORMATION,
-    accent: 'resource-accent-violet'
-  },
-  {
-    key: 'sopAgentVocal',
-    title: 'Fonctionnement de l’agent vocal',
-    description: 'Découvrez comment votre agent vocal prend en charge un appel, qualifie la demande et transmet les informations utiles à votre agence.',
-    buttonLabel: 'Voir le fonctionnement',
-    icon: ICON_SOP_AGENT_VOCAL,
     accent: 'resource-accent-violet'
   }
 ];
@@ -352,11 +337,15 @@ function getAgencyIdFromUrl() {
 // `colorClass` : identite couleur exacte par univers (voir .nav-color-* dans
 // styles.css) - Dashboard n'a volontairement aucune couleur assignee (garde le
 // bleu par defaut de .app-nav-item.active).
+// L'onglet "Assistant vocal" (Retell/Voice OS) est volontairement retire de
+// la nav depuis le repositionnement d'octobre 2026 (distributeurs B2B
+// hygiene/entretien) - ce n'est plus l'offre vendue aux clients actuels. La
+// route /client/:id/retell et tout le code associe restent fonctionnels
+// (upsell potentiel) - voir CLAUDE.md racine, section Historique.
 const APP_NAV_ITEMS = [
   { key: '', label: 'Dashboard' },
   { key: 'documents', label: 'Documents', matchKeys: ['devis', 'factures', 'contrat', 'cahier-des-charges'], colorClass: 'nav-color-documents' },
   { key: 'projet', label: 'Avancement', colorClass: 'nav-color-avancement' },
-  { key: 'retell', label: 'Assistant vocal', colorClass: 'nav-color-agent-vocal' },
   { key: 'ressources', label: 'Ressources', colorClass: 'nav-color-ressources' }
 ];
 
@@ -636,6 +625,7 @@ function renderClientData(payload, rootSelector) {
           `}
         </div>
       </section>
+      ${isAdmin ? `
       <section class="section-block">
         <div class="section-title">Votre assistante vocale</div>
         <div class="contact-card contact-card-assistant">
@@ -646,7 +636,6 @@ function renderClientData(payload, rootSelector) {
             <h3>${agency.agentVocal ? escapeHtml(agency.agentVocal) : 'Assistante vocale'}</h3>
             <p>Assistante vocale de ${agency.nomAgencePublic || agency.nomAgence || 'votre agence'}</p>
           </div>
-          ${isAdmin ? `
           <div class="webcall-widget" id="webcall-widget">
             <div class="webcall-admin-target">
               <p class="webcall-admin-note" id="webcall-admin-note">Chargement…</p>
@@ -656,9 +645,10 @@ function renderClientData(payload, rootSelector) {
             </button>
             <div class="webcall-status" id="webcall-status" aria-live="polite"></div>
             <button type="button" class="webcall-unmute-btn" id="webcall-unmute-btn" hidden>Activer le son</button>
-          </div>` : ''}
+          </div>
         </div>
       </section>
+      ` : ''}
       <section class="section-block support-section-block">
         <div class="section-title">${isAdmin ? 'Christel' : 'Votre interlocutrice Bluewaive'}</div>
         ${isAdmin ? '' : mascotteImg('support', 'Mascotte support Bluewaive', 'mascotte-corner')}
@@ -707,11 +697,6 @@ function renderClientData(payload, rootSelector) {
           <a class="tile tile-violet" href="/client/${agency.id}/ressources">
             <span class="tile-icon">${ICON_RESSOURCES}</span>
             <span class="tile-body"><h3>Ressources</h3><p>Accédez aux guides et supports utiles.</p></span>
-            <span class="tile-chevron">${ICON_CHEVRON}</span>
-          </a>
-          <a class="tile tile-blue" href="/client/${agency.id}/retell">
-            <span class="tile-icon">${ICON_AGENT_VOCAL}</span>
-            <span class="tile-body"><h3>Agent vocal</h3><p>Consultez l'activité de votre agent vocal.</p></span>
             <span class="tile-chevron">${ICON_CHEVRON}</span>
           </a>
           `}
@@ -992,7 +977,10 @@ function renderClientData(payload, rootSelector) {
     root.innerHTML = createNavigationBanner(agencyId, 'Votre compte') + `
       <div class="grid grid-2">
         <section class="section-block account-media-section">
-          <div class="section-title">Identité de l'agence</div>
+          <div class="section-title-row">
+            ${isAdmin ? mascotteImg('conseil', 'Mascotte conseil Bluewaive', 'mascotte-title') : ''}
+            <div class="section-title">Identité de l'agence</div>
+          </div>
           <div class="contact-card account-media-card">
             <div class="account-media-thumb" id="logoPreview" data-img-class="agency-logo">
               ${compte.logoUrl
@@ -1335,12 +1323,14 @@ async function loadAdminGlobalKpis(agencyId) {
     const payload = await response.json();
     const clients = Array.isArray(payload.clients) ? payload.clients : [];
     const total = clients.length;
-    const voiceOsCount = clients.filter((c) => c.voiceOsActif).length;
     const onboardingCount = clients.filter((c) => c.accesOnboarding).length;
+    const modulesMisEnService = Number(payload.modulesMisEnService || 0);
+    const ressourcesAValider = Number(payload.ressourcesAValider || 0);
     el.innerHTML = `
       <div class="kpi"><strong>${total}</strong><span>clients</span></div>
-      <div class="kpi"><strong>${voiceOsCount}</strong><span>voice os actif</span></div>
       <div class="kpi"><strong>${onboardingCount}</strong><span>onboarding actif</span></div>
+      <div class="kpi"><strong>${modulesMisEnService}</strong><span>modules mis en service</span></div>
+      <div class="kpi"><strong>${ressourcesAValider}</strong><span>ressources à valider</span></div>
     `;
   } catch (error) {
     el.innerHTML = '<div class="meta">KPI indisponibles pour le moment.</div>';
@@ -1368,8 +1358,7 @@ function renderAdminQuickAccessTiles(agencyId, hasTarget) {
   const dependentTiles = [
     { cls: 'tile-gold', icon: ICON_DOCUMENTS_FOLDER, title: 'Documents', desc: 'Retrouvez les devis, factures, contrat et cahier des charges.', href: `/client/${agencyId}/documents` },
     { cls: 'tile-green', icon: ICON_AVANCEMENT, title: 'Avancement', desc: "Suivez les étapes de l'onboarding.", href: `/client/${agencyId}/projet` },
-    { cls: 'tile-violet', icon: ICON_RESSOURCES, title: 'Ressources', desc: 'Accédez aux guides et supports utiles.', href: `/client/${agencyId}/ressources` },
-    { cls: 'tile-blue', icon: ICON_AGENT_VOCAL, title: 'Agent vocal', desc: "Consultez l'activité de l'agent vocal.", href: `/client/${agencyId}/retell` }
+    { cls: 'tile-violet', icon: ICON_RESSOURCES, title: 'Ressources', desc: 'Accédez aux guides et supports utiles.', href: `/client/${agencyId}/ressources` }
   ].map((tile) => hasTarget ? `
     <a class="tile ${tile.cls}" href="${tile.href}">
       <span class="tile-icon">${tile.icon}</span>
@@ -1392,9 +1381,7 @@ function renderAdminQuickAccessTiles(agencyId, hasTarget) {
 function renderClientCard(client) {
   const accessLabel = client.accesOnboarding ? 'Accès actif' : 'Accès inactif';
   const accessClass = client.accesOnboarding ? 'active' : 'pending';
-  const voiceOsLabel = client.voiceOsActif
-    ? `Voice OS actif${client.agentVocal ? ` - ${escapeHtml(client.agentVocal)}` : ''}`
-    : (client.agentVocal ? escapeHtml(client.agentVocal) : 'Voice OS inactif');
+  const modulesLabel = `${Number(client.modulesMisEnService || 0)} module(s)`;
   const progressionLabel = client.progression ? `${client.progression.completed}/${client.progression.total} étapes` : '—';
   return `
     <button type="button" class="doc-card doc-card-clickable client-card-button" data-client-select data-client-id="${escapeHtml(client.id)}" data-client-name="${escapeHtml(client.nomAgence || '')}">
@@ -1409,7 +1396,7 @@ function renderClientCard(client) {
         <div class="doc-figure"><span class="label">Contact</span><span class="value">${escapeHtml(client.contact || '—')}</span></div>
         <div class="doc-figure"><span class="label">Email</span><span class="value">${escapeHtml(client.email || '—')}</span></div>
         <div class="doc-figure"><span class="label">Statut</span><span class="value">${escapeHtml(client.statut || '—')}</span></div>
-        <div class="doc-figure"><span class="label">Assistant vocal</span><span class="value">${voiceOsLabel}</span></div>
+        <div class="doc-figure"><span class="label">Modules</span><span class="value">${modulesLabel}</span></div>
         <div class="doc-figure"><span class="label">Offre</span><span class="value">${escapeHtml(client.offre || '—')}</span></div>
         <div class="doc-figure"><span class="label">Progression</span><span class="value">${progressionLabel}</span></div>
       </div>
