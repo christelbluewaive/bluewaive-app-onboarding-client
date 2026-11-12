@@ -76,11 +76,14 @@
       .tempo-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
       @media (max-width: 480px) { .tempo-row-2 { grid-template-columns: 1fr; } }
 
-      /* Tableau de detail par etape : 3 colonnes (etape / manuel / Tempo), empile en
-         carte par etape en dessous de 620px car un vrai <table> devient illisible. */
+      /* Carte par etape, avec le libelle "Manuel (min)"/"Tempo (min)" toujours visible
+         directement au-dessus de son propre champ - meme disposition a toutes les
+         largeurs (plus de grille 3 colonnes "display: contents" qui desalignait le
+         label Tempo sous la mauvaise colonne a partir de 620px et faisait confondre
+         les deux champs). */
       .tempo-steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
       .tempo-step-row {
-        display: grid; grid-template-columns: 1.6fr 0.7fr 0.7fr; gap: 10px; align-items: center;
+        display: flex; flex-direction: column; gap: 8px; align-items: stretch;
         padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
       }
       .tempo-step-row .tempo-step-label { font-size: 0.84rem; color: var(--text); font-weight: 600; line-height: 1.3; }
@@ -88,20 +91,8 @@
         width: 100%; padding: 8px 9px; border: 1px solid var(--line); border-radius: 8px; font-size: 0.92rem;
         font-family: inherit; color: var(--text);
       }
-      .tempo-steps-head {
-        display: grid; grid-template-columns: 1.6fr 0.7fr 0.7fr; gap: 10px; padding: 0 12px;
-        font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
-      }
-      @media (max-width: 620px) {
-        .tempo-steps-head { display: none; }
-        .tempo-step-row { grid-template-columns: 1fr; gap: 8px; }
-        .tempo-step-row .tempo-step-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .tempo-step-row .tempo-step-inputs label { font-size: 0.72rem; color: var(--muted); font-weight: 700; display: block; margin-bottom: 4px; }
-      }
-      .tempo-step-inputs { display: contents; }
-      @media (max-width: 620px) {
-        .tempo-step-inputs { display: grid; }
-      }
+      .tempo-step-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .tempo-step-inputs label { font-size: 0.72rem; color: var(--muted); font-weight: 700; display: block; margin-bottom: 4px; }
 
       .tempo-badge {
         display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 10px;
@@ -282,9 +273,6 @@
                Gamma) - voir note dans ce meme workflow pour le detail des noeuds. -->
           <div class="section-block" id="panel-detail-inputs" hidden>
             <div class="section-title">Détail par étape (minutes)</div>
-            <div class="tempo-steps-head">
-              <span>Étape</span><span>Manuel (min)</span><span>Tempo (min)</span>
-            </div>
             <div class="tempo-steps">
               <div class="tempo-step-row">
                 <div class="tempo-step-label">Relire le compte rendu et identifier les besoins</div>
